@@ -5,115 +5,129 @@ import android.os.Bundle;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.*;
-import android.text.InputType;
+import android.speech.tts.TextToSpeech;
+import java.util.Locale;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
     int gold = Color.rgb(212,160,23);
     int dark = Color.rgb(28,20,13);
-    Spinner style, language, voice, duration;
+    Spinner language, voice;
     EditText story;
     TextView status;
+    TextToSpeech tts;
+    boolean ready = false;
 
-    @Override public void onCreate(Bundle b) {
+    @Override
+    public void onCreate(Bundle b) {
         super.onCreate(b);
+        tts = new TextToSpeech(this, this);
         getWindow().setStatusBarColor(dark);
         getWindow().setNavigationBarColor(dark);
 
         ScrollView scroll = new ScrollView(this);
         scroll.setBackgroundColor(dark);
         LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(24, 30, 24, 30);
+        root.setOrientation(1);
+        root.setPadding(24,30,24,30);
         scroll.addView(root);
 
         TextView title = new TextView(this);
         title.setText("MUGHAL AI STUDIO");
         title.setTextColor(gold);
         title.setTextSize(27);
-        title.setTypeface(null, Typeface.BOLD);
+        title.setTypeface(null,Typeface.BOLD);
         title.setGravity(Gravity.CENTER);
         root.addView(title);
 
-        TextView sub = new TextView(this);
-        sub.setText("Create • Animate • Speak");
-        sub.setTextColor(Color.WHITE);
-        sub.setTextSize(14);
-        sub.setGravity(Gravity.CENTER);
-        sub.setPadding(0, 5, 0, 24);
-        root.addView(sub);
+        TextView label = new TextView(this);
+        label.setText("اپنی کہانی لکھیں");
+        label.setTextColor(gold);
+        label.setTextSize(18);
+        root.addView(label);
 
-        addLabel(root, "اپنی کہانی لکھیں");
         story = new EditText(this);
         story.setHint("یہاں اپنی کہانی لکھیں...");
         story.setTextColor(Color.WHITE);
         story.setHintTextColor(Color.LTGRAY);
-        story.setGravity(Gravity.TOP);
         story.setMinLines(5);
+        story.setGravity(Gravity.TOP);
         story.setPadding(14,14,14,14);
         story.setBackgroundColor(Color.rgb(54,43,32));
-        root.addView(story, new LinearLayout.LayoutParams(-1, -2));
+        root.addView(story);
 
-        style = addSpinner(root, "کارٹون اسٹائل", new String[]{"2D Cartoon", "3D Cartoon"});
-        language = addSpinner(root, "زبان", new String[]{"Urdu", "Hindi", "English"});
-        voice = addSpinner(root, "آواز", new String[]{"Male", "Female"});
-        duration = addSpinner(root, "ویڈیو کا دورانیہ", new String[]{"30 seconds", "1 minute", "3 minutes"});
+        language = addSpinner(root,"زبان",new String[]{"Urdu","English"});
+        voice = addSpinner(root,"آواز",new String[]{"Male","Female"});
 
-        Button generate = new Button(this);
-        generate.setText("کارٹون بنائیں");
-        generate.setTextColor(Color.BLACK);
-        generate.setBackgroundTintList(android.content.res.ColorStateList.valueOf(gold));
-        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(-1, -2);
-        bp.setMargins(0, 26, 0, 12);
-        root.addView(generate, bp);
+        Button speak = new Button(this);
+        speak.setText("کہانی کی آواز سنیں");
+        root.addView(speak);
 
         status = new TextView(this);
         status.setTextColor(Color.WHITE);
-        status.setTextSize(14);
-        status.setPadding(4, 12, 4, 12);
+        status.setTextSize(15);
+        status.setPadding(5,20,5,20);
         root.addView(status);
 
-        TextView note = new TextView(this);
-        note.setText("نوٹ: یہ ابتدائی Android ایپ ہے۔ اصل AI ویڈیو اور آواز بنانے کے لیے AI سروس/API جوڑنا ضروری ہے۔");
-        note.setTextColor(Color.LTGRAY);
-        note.setTextSize(12);
-        note.setPadding(0, 24, 0, 0);
-        root.addView(note);
-
-        generate.setOnClickListener(v -> {
-            String text = story.getText().toString().trim();
-            if (text.isEmpty()) {
-                story.setError("پہلے اپنی کہانی لکھیں");
-                return;
-            }
-            status.setText("آپ کی سیٹنگز تیار ہیں:\n" +
-                "اسٹائل: " + style.getSelectedItem() + "\n" +
-                "زبان: " + language.getSelectedItem() + "\n" +
-                "آواز: " + voice.getSelectedItem() + "\n" +
-                "دورانیہ: " + duration.getSelectedItem() +
-                "\n\nAI ویڈیو جنریشن فعال کرنے کے لیے API کنکشن درکار ہے۔");
-        });
+        speak.setOnClickListener(v -> speakStory());
 
         setContentView(scroll);
     }
 
-    void addLabel(LinearLayout root, String text) {
-        TextView label = new TextView(this);
-        label.setText(text);
-        label.setTextColor(gold);
-        label.setTextSize(16);
-        label.setTypeface(null, Typeface.BOLD);
-        label.setPadding(0, 14, 0, 8);
-        root.addView(label);
+    Spinner addSpinner(LinearLayout root,String label,String[] values) {
+        TextView t = new TextView(this);
+        t.setText(label);
+        t.setTextColor(gold);
+        t.setTextSize(16);
+        t.setPadding(0,15,0,5);
+        root.addView(t);
+
+        Spinner s = new Spinner(this);
+        ArrayAdapter<String> a = new ArrayAdapter<>(
+            this,android.R.layout.simple_spinner_dropdown_item,values);
+        s.setAdapter(a);
+        root.addView(s);
+        return s;
     }
 
-    Spinner addSpinner(LinearLayout root, String label, String[] values) {
-        addLabel(root, label);
-        Spinner s = new Spinner(this);
-        ArrayAdapter<String> a = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, values);
-        s.setAdapter(a);
-        root.addView(s, new LinearLayout.LayoutParams(-1, -2));
-        return s;
+    void speakStory() {
+        String text = story.getText().toString().trim();
+        if(text.isEmpty()) {
+            story.setError("پہلے کہانی لکھیں");
+            return;
+        }
+        if(!ready) {
+            status.setText("آواز تیار ہو رہی ہے، دوبارہ کوشش کریں۔");
+            return;
+        }
+
+        Locale locale = language.getSelectedItemPosition()==0
+            ? Locale.forLanguageTag("ur-PK") : Locale.US;
+
+        int result = tts.setLanguage(locale);
+        if(result == TextToSpeech.LANG_MISSING_DATA ||
+           result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            status.setText("اس زبان کی آواز فون میں موجود نہیں۔");
+            return;
+        }
+
+        tts.setPitch(voice.getSelectedItemPosition()==0 ? 0.88f : 1.12f);
+        tts.setSpeechRate(0.9f);
+        tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"story");
+        status.setText("کہانی سنائی جا رہی ہے۔");
+    }
+
+    @Override
+    public void onInit(int result) {
+        ready = result == TextToSpeech.SUCCESS;
+    }
+
+    @Override
+    protected void onDestroy() {
+        if(tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
     }
 }
