@@ -4,151 +4,176 @@ package com.mughalai.studio;
 import android.app.Activity;
 import android.os.Bundle;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.view.Gravity;
 import android.widget.*;
-import android.speech.tts.TextToSpeech;
-import java.util.Locale;
+import java.io.File;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
-    TextToSpeech tts;
-    EditText story;
-    Spinner language, voice;
-    TextView status, scenes;
-    boolean ready = false;
-    int gold = Color.rgb(230,180,55);
-    int dark = Color.rgb(25,17,12);
+public class MainActivity extends Activity {
 
-    public void onCreate(Bundle b) {
-        super.onCreate(b);
-        tts = new TextToSpeech(this, this);
-        getWindow().setStatusBarColor(dark);
-        getWindow().setNavigationBarColor(dark);
+    private EditText story;
+    private Spinner duration, language;
+    private TextView status;
+    private Button generate;
+    private final ExecutorService worker =
+            Executors.newSingleThreadExecutor();
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        getWindow().setStatusBarColor(Color.rgb(28,20,13));
+        getWindow().setNavigationBarColor(Color.rgb(28,20,13));
 
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(dark);
+        scroll.setBackgroundColor(Color.rgb(28,20,13));
+
         LinearLayout root = new LinearLayout(this);
-        root.setOrientation(1);
-        root.setPadding(22,28,22,28);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(22,28,22,24);
         scroll.addView(root);
 
-        TextView title = new TextView(this);
-        title.setText("👑 MUGHAL AI STUDIO");
-        title.setTextColor(gold);
-        title.setTextSize(26);
-        title.setTypeface(null,Typeface.BOLD);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title);
-
         TextView heading = new TextView(this);
-        heading.setText("اپنی کہانی لکھیں");
-        heading.setTextColor(gold);
-        heading.setTextSize(19);
+        heading.setText("MUGHAL AI STUDIO");
+        heading.setTextColor(Color.rgb(230,180,50));
+        heading.setTextSize(26);
+        heading.setGravity(Gravity.CENTER);
+        heading.setPadding(0,0,0,8);
         root.addView(heading);
 
+        TextView intro = new TextView(this);
+        intro.setText("Story to Cartoon Video");
+        intro.setTextColor(Color.WHITE);
+        intro.setGravity(Gravity.CENTER);
+        intro.setPadding(0,0,0,24);
+        root.addView(intro);
+
+        TextView label = new TextView(this);
+        label.setText("اپنی کہانی لکھیں");
+        label.setTextColor(Color.WHITE);
+        root.addView(label);
+
         story = new EditText(this);
-        story.setHint("یہاں اپنی کہانی لکھیں...");
         story.setTextColor(Color.WHITE);
         story.setHintTextColor(Color.LTGRAY);
-        story.setMinLines(5);
+        story.setHint("یہاں مکمل کہانی لکھیں...");
         story.setGravity(Gravity.TOP);
-        story.setPadding(15,15,15,15);
-        story.setBackgroundColor(Color.rgb(55,42,29));
+        story.setMinLines(6);
+        story.setPadding(14,14,14,14);
+        story.setBackgroundColor(Color.rgb(55,43,32));
         root.addView(story);
 
-        language = addSpinner(root,"زبان",new String[]{"Urdu","English"});
-        voice = addSpinner(root,"آواز",new String[]{"Male","Female"});
+        language = addSpinner(root, "Caption language",
+                new String[]{"اردو", "English"});
 
-        Button speak = new Button(this);
-        speak.setText("🔊 کہانی کی آواز سنیں");
-        root.addView(speak);
+        duration = addSpinner(root, "Video duration",
+                new String[]{"2 minutes", "3 minutes",
+                        "4 minutes", "8 minutes"});
 
-        Button make = new Button(this);
-        make.setText("🎬 کارٹون مناظر بنائیں");
-        root.addView(make);
-
-        scenes = new TextView(this);
-        scenes.setTextColor(gold);
-        scenes.setTextSize(18);
-        scenes.setPadding(8,20,8,20);
-        root.addView(scenes);
+        generate = new Button(this);
+        generate.setText("Create 720p Cartoon MP4");
+        root.addView(generate);
 
         status = new TextView(this);
         status.setTextColor(Color.WHITE);
+        status.setTextSize(14);
+        status.setPadding(0,18,0,0);
         root.addView(status);
 
-        speak.setOnClickListener(v -> speakStory());
-        make.setOnClickListener(v -> makeScenes());
+        TextView note = new TextView(this);
+        note.setTextColor(Color.LTGRAY);
+        note.setTextSize(12);
+        note.setPadding(0,20,0,0);
+        note.setText("یہ آف لائن ابتدائی 2D کارٹون ورژن ہے۔ "
+                + "یہ AI آواز یا حقیقی 3D کردار تیار نہیں کرتا۔");
+        root.addView(note);
+
+        generate.setOnClickListener(v -> createVideo());
         setContentView(scroll);
     }
 
-    Spinner addSpinner(LinearLayout root,String label,String[] values) {
-        TextView t = new TextView(this);
-        t.setText(label);
-        t.setTextColor(gold);
-        t.setPadding(0,15,0,5);
-        root.addView(t);
-        Spinner s = new Spinner(this);
-        ArrayAdapter<String> a = new ArrayAdapter<>(
-            this,android.R.layout.simple_spinner_dropdown_item,values);
-        s.setAdapter(a);
-        root.addView(s);
-        return s;
+    private Spinner addSpinner(LinearLayout root,
+                               String title, String[] choices) {
+        TextView label = new TextView(this);
+        label.setText(title);
+        label.setTextColor(Color.WHITE);
+        label.setPadding(0,18,0,4);
+        root.addView(label);
+
+        Spinner spinner = new Spinner(this);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this, android.R.layout.simple_spinner_item, choices);
+        adapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        root.addView(spinner);
+        return spinner;
     }
 
-    void speakStory() {
+    private void createVideo() {
         String text = story.getText().toString().trim();
-        if(text.isEmpty()) {
-            status.setText("پہلے کہانی لکھیں");
-            return;
-        }
-        if(!ready) {
-            status.setText("آواز تیار ہو رہی ہے");
-            return;
-        }
-        Locale l = language.getSelectedItemPosition()==0
-            ? Locale.forLanguageTag("ur-PK") : Locale.US;
-        int r = tts.setLanguage(l);
-        if(r == TextToSpeech.LANG_MISSING_DATA ||
-           r == TextToSpeech.LANG_NOT_SUPPORTED) {
-            status.setText("اس زبان کی آواز دستیاب نہیں");
-            return;
-        }
-        tts.setPitch(voice.getSelectedItemPosition()==0 ? 0.88f : 1.12f);
-        tts.setSpeechRate(0.9f);
-        tts.speak(text,TextToSpeech.QUEUE_FLUSH,null,"story");
-        status.setText("کہانی سنائی جا رہی ہے");
-    }
 
-    void makeScenes() {
-        String text = story.getText().toString().trim();
-        if(text.isEmpty()) {
-            status.setText("پہلے کہانی لکھیں");
+        if (text.isEmpty()) {
+            story.setError("Please write your story");
             return;
         }
-        String[] parts = text.split("[۔.!?]");
-        StringBuilder out = new StringBuilder();
-        for(int i=0;i<parts.length && i<8;i++) {
-            if(!parts[i].trim().isEmpty()) {
-                out.append("🎬 منظر ").append(i+1).append("\n");
-                out.append("🖼️ ").append(parts[i].trim()).append("\n\n");
+
+        final int minutes = duration.getSelectedItemPosition() + 2;
+        final boolean english =
+                language.getSelectedItemPosition() == 1;
+
+        generate.setEnabled(false);
+        status.setText("Preparing video... Please wait.");
+
+        worker.execute(() -> {
+            File output = null;
+            try {
+                File folder = new File(
+                        getExternalFilesDir("Movies"),
+                        "MughalAIStudio");
+
+                if (!folder.exists() && !folder.mkdirs()) {
+                    throw new Exception("Cannot create video folder");
+                }
+
+                output = new File(folder,
+                        "Cartoon_" + System.currentTimeMillis() + ".mp4");
+
+                final File target = output;
+
+                VideoRenderer.render(
+                        text, target, minutes, english,
+                        (frame, total) -> runOnUiThread(() ->
+                                status.setText("Rendering: "
+                                        + (frame * 100 / total) + "%"))
+                );
+
+                runOnUiThread(() -> {
+                    status.setText("Video saved:\n"
+                            + target.getAbsolutePath());
+                    generate.setEnabled(true);
+                });
+
+            } catch (Exception e) {
+                if (output != null && output.exists()) {
+                    // Remove an incomplete video.
+                    output.delete();
+                }
+                final String error = e.getMessage() == null
+                        ? "Video creation failed" : e.getMessage();
+
+                runOnUiThread(() -> {
+                    status.setText("Error: " + error);
+                    generate.setEnabled(true);
+                });
             }
-        }
-        scenes.setText(out.toString());
-        status.setText("مناظر تیار ہیں۔ یہ ابھی MP4 ویڈیو نہیں ہے۔");
-    }
-
-    @Override
-    public void onInit(int result) {
-        ready = result == TextToSpeech.SUCCESS;
+        });
     }
 
     @Override
     protected void onDestroy() {
-        if(tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
+        worker.shutdown();
         super.onDestroy();
     }
 }
