@@ -202,8 +202,25 @@ public class MainActivity extends Activity {
 
                 VideoRenderer.render(text,target,minutes,english,
                         (frame,total) -> runOnUiThread(() ->
-                                status.setText("Rendering: " +
+                                status.setText("Rendering video: " +
                                         (frame * 100 / total) + "%")));
+
+                File voice = new File(folder,
+                        "voice_" + System.currentTimeMillis() + ".wav");
+                File silentVideo = new File(folder,
+                        "silent_" + System.currentTimeMillis() + ".mp4");
+                try {
+                    runOnUiThread(() -> status.setText("Creating story voice..."));
+                    SpeechSynthesizer.createVoiceFile(
+                            MainActivity.this, text, english, voice);
+                    runOnUiThread(() -> status.setText("Adding voice to video..."));
+                    if (!target.renameTo(silentVideo))
+                        throw new Exception("Could not prepare video for audio");
+                    StoryVoiceover.muxWavWithVideo(silentVideo, voice, target);
+                } finally {
+                    if (voice.exists()) voice.delete();
+                    if (silentVideo.exists()) silentVideo.delete();
+                }
 
                 String message = saveToGallery(target);
                 runOnUiThread(() -> {
