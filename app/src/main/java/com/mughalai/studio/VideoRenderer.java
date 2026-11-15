@@ -238,65 +238,105 @@ public final class VideoRenderer {
             boolean english) {
 
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        String s = caption == null ? "" : caption.toLowerCase();
+        boolean night = s.contains("رات") || s.contains("چاند") || s.contains("night") || s.contains("moon");
+        boolean sea = s.contains("سمندر") || s.contains("دریا") || s.contains("کشتی") || s.contains("sea") || s.contains("ocean");
+        boolean desert = s.contains("صحرا") || s.contains("ریگ") || s.contains("desert");
+        boolean forest = s.contains("جنگل") || s.contains("درخت") || s.contains("forest") || s.contains("tree");
 
-        canvas.drawColor(Color.rgb(112, 174, 222));
+        canvas.drawColor(night ? Color.rgb(18, 27, 65) :
+                sea ? Color.rgb(105, 190, 220) :
+                desert ? Color.rgb(238, 184, 112) :
+                forest ? Color.rgb(115, 185, 205) : Color.rgb(112, 174, 222));
 
-        // Sun
-        p.setColor(Color.YELLOW);
-        canvas.drawCircle(1080, 110, 54, p);
+        // Sun or moon and drifting clouds
+        p.setColor(night ? Color.rgb(245, 238, 190) : Color.rgb(255, 220, 70));
+        canvas.drawCircle(1080, 110, 48, p);
+        if (!night) {
+            p.setColor(Color.argb(150, 255, 255, 255));
+            float cloudX = (frame * 0.7f) % 1500 - 120;
+            canvas.drawCircle(cloudX, 145, 27, p);
+            canvas.drawCircle(cloudX + 35, 132, 34, p);
+            canvas.drawCircle(cloudX + 72, 147, 25, p);
+        } else {
+            p.setColor(Color.WHITE);
+            for (int i = 0; i < 18; i++) {
+                float sx = (i * 173) % WIDTH;
+                float sy = (i * 71) % 430;
+                canvas.drawCircle(sx, sy, 2.5f, p);
+            }
+        }
 
-        // Green ground
-        p.setColor(Color.rgb(70, 145, 75));
-        canvas.drawRect(0, 520, WIDTH, HEIGHT, p);
+        // Story-dependent landscape
+        p.setColor(sea ? Color.rgb(30, 125, 185) :
+                desert ? Color.rgb(202, 151, 83) :
+                night ? Color.rgb(30, 70, 55) : Color.rgb(70, 145, 75));
+        canvas.drawRect(0, 490, WIDTH, HEIGHT, p);
+        if (sea) {
+            p.setColor(Color.rgb(35, 145, 200));
+            canvas.drawRect(0, 390, WIDTH, 560, p);
+            p.setColor(Color.rgb(210, 190, 130));
+            canvas.drawRect(0, 560, WIDTH, HEIGHT, p);
+            p.setColor(Color.WHITE);
+            for (int i = 0; i < 8; i++) {
+                float wx = (i * 190 + frame * 2) % WIDTH;
+                canvas.drawLine(wx, 440 + (i % 3) * 24, wx + 65, 440 + (i % 3) * 24, p);
+            }
+        } else if (forest) {
+            p.setColor(Color.rgb(65, 115, 55));
+            for (int i = 0; i < 8; i++) {
+                float tx = i * 180 + 35;
+                canvas.drawRect(tx - 9, 335, tx + 9, 535, p);
+                canvas.drawCircle(tx, 320, 62, p);
+                canvas.drawCircle(tx - 35, 350, 42, p);
+            }
+        } else {
+            // Palace / story landmark
+            p.setColor(Color.rgb(235, 215, 175));
+            canvas.drawRect(100, 250, 500, 520, p);
+            p.setColor(Color.rgb(170, 115, 70));
+            canvas.drawRect(250, 380, 350, 520, p);
+            canvas.drawCircle(300, 380, 50, p);
+            p.setColor(Color.rgb(235, 215, 175));
+            canvas.drawCircle(190, 250, 58, p);
+            canvas.drawCircle(410, 250, 58, p);
+            if (desert) {
+                p.setColor(Color.rgb(165, 115, 60));
+                canvas.drawOval(680, 430, 1120, 555, p);
+            }
+        }
 
-        // Palace
-        p.setColor(Color.rgb(235, 215, 175));
-        canvas.drawRect(100, 250, 500, 520, p);
-
-        p.setColor(Color.rgb(170, 115, 70));
-        canvas.drawRect(250, 380, 350, 520, p);
-        canvas.drawCircle(300, 380, 50, p);
-
-        // Moving cartoon character
-        float x = 650 +
-                (float) Math.sin(frame * 0.04) * 35;
-
-        p.setColor(Color.rgb(30, 30, 30));
-        canvas.drawCircle(x, 330, 65, p);
-
+        // Animated cartoon hero: bobbing body and swinging legs/arms
+        float x = 690 + (float) Math.sin(frame * 0.035) * 55;
+        float step = (float) Math.sin(frame * 0.22) * 20;
+        p.setColor(Color.rgb(45, 30, 25));
+        canvas.drawCircle(x, 315, 62, p);
         p.setColor(Color.rgb(240, 190, 145));
-        canvas.drawCircle(x, 355, 48, p);
-
+        canvas.drawCircle(x, 340, 47, p);
         p.setColor(Color.BLACK);
-        canvas.drawCircle(x - 17, 345, 6, p);
-        canvas.drawCircle(x + 17, 345, 6, p);
-
+        canvas.drawCircle(x - 16, 332, 6, p);
+        canvas.drawCircle(x + 16, 332, 6, p);
         p.setColor(Color.rgb(30, 70, 160));
-        canvas.drawRect(x - 38, 400, x + 38, 520, p);
+        canvas.drawRect(x - 35, 385, x + 35, 490, p);
+        p.setColor(Color.rgb(240, 190, 145));
+        p.setStrokeWidth(15);
+        canvas.drawLine(x - 30, 405, x - 65, 445 + step, p);
+        canvas.drawLine(x + 30, 405, x + 65, 445 - step, p);
+        p.setColor(Color.rgb(35, 35, 45));
+        p.setStrokeWidth(18);
+        canvas.drawLine(x - 15, 490, x - 22 + step, 535, p);
+        canvas.drawLine(x + 15, 490, x + 22 - step, 535, p);
 
-        // Subtitle background
-        p.setColor(Color.argb(215, 0, 0, 0));
-        canvas.drawRoundRect(
-                45, 555, 1235, 690, 22, 22, p);
-
+        // Subtitles
+        p.setColor(Color.argb(220, 0, 0, 0));
+        canvas.drawRoundRect(45, 555, 1235, 690, 22, 22, p);
         p.setColor(Color.WHITE);
         p.setTextSize(34);
-        p.setTypeface(Typeface.create(
-                "sans-serif", Typeface.BOLD));
-
+        p.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
         String text = caption == null ? "" : caption.trim();
-
-        if (text.length() > 65) {
-            text = text.substring(0, 65) + "...";
-        }
-
-        p.setTextAlign(
-                english ? Paint.Align.CENTER : Paint.Align.RIGHT);
-
-        if (english) {
-            canvas.drawText(text, WIDTH / 2f, 635, p);
-        } else {
-            canvas.drawText(text, 1190, 635, p);
-        }
+        if (text.length() > 65) text = text.substring(0, 65) + "...";
+        p.setTextAlign(english ? Paint.Align.CENTER : Paint.Align.RIGHT);
+        if (english) canvas.drawText(text, WIDTH / 2f, 635, p);
+        else canvas.drawText(text, 1190, 635, p);
     }
 }
