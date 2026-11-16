@@ -209,17 +209,21 @@ public class MainActivity extends Activity {
                         "voice_" + System.currentTimeMillis() + ".wav");
                 File silentVideo = new File(folder,
                         "silent_" + System.currentTimeMillis() + ".mp4");
+                File combinedVideo = new File(folder,
+                        "combined_" + System.currentTimeMillis() + ".mp4");
                 try {
                     runOnUiThread(() -> status.setText("Creating story voice..."));
                     SpeechSynthesizer.createVoiceFile(
                             MainActivity.this, text, english, voice);
                     runOnUiThread(() -> status.setText("Adding voice to video..."));
-                    if (!target.renameTo(silentVideo))
-                        throw new Exception("Could not prepare video for audio");
-                    StoryVoiceover.muxWavWithVideo(silentVideo, voice, target);
+                    copyFile(target, silentVideo);
+                    StoryVoiceover.muxWavWithVideo(silentVideo, voice, combinedVideo);
+                    if (!combinedVideo.renameTo(target))
+                        throw new Exception("Could not finalize video with voice");
                 } finally {
                     if (voice.exists()) voice.delete();
                     if (silentVideo.exists()) silentVideo.delete();
+                    if (combinedVideo.exists()) combinedVideo.delete();
                 }
 
                 String message = saveToGallery(target);
@@ -237,6 +241,16 @@ public class MainActivity extends Activity {
                 });
             }
         });
+    }
+
+    private void copyFile(File source, File destination) throws Exception {
+        try (FileInputStream in = new FileInputStream(source);
+             OutputStream out = new java.io.FileOutputStream(destination)) {
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
+            out.flush();
+        }
     }
 
     private String saveToGallery(File file) throws Exception {
