@@ -98,7 +98,9 @@ final class GLVegetableRenderer {
         GLES20.glViewport(0,0,W,H); GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glClearColor(0f,0f,0f,0f); GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT|GLES20.GL_DEPTH_BUFFER_BIT);
         GLES20.glUseProgram(program); GLES20.glUniform3f(lightLoc,-0.4f,0.8f,1f);
-        float t=frame*0.055f, bob=(float)Math.sin(t)*0.16f, step=(float)Math.sin(t*1.35f)*0.20f;\n        float talk=(float)(0.5+0.5*Math.sin(t*7.0));\n        float greet=(float)Math.sin(t*1.8f);
+        float t=frame*0.055f, bob=(float)Math.sin(t)*0.16f, step=(float)Math.sin(t*1.35f)*0.20f;
+        float talk=(float)(0.5+0.5*Math.sin(t*7.0));
+        float greet=(float)Math.sin(t*1.8f);
         // Potato: sculpted ellipsoid body, tiny eyes, nose, smile, arms and feet.
         sphere(-1.45f+step*0.30f,bob,0,0.78f,1.02f,0.62f,0.70f,0.43f,0.19f);
         sphere(-1.72f,0.25f,0.57f,0.09f,0.13f,0.06f,1f,1f,1f);
@@ -123,7 +125,12 @@ final class GLVegetableRenderer {
         sphere(2.08f,-0.05f+greet*0.22f,0,0.13f,0.45f,0.14f,0.18f,0.42f,0.12f);
         sphere(1.08f,-0.92f-step,0,0.15f,0.4f,0.16f,0.12f,0.36f,0.10f);
         sphere(1.62f,-0.92f+step,0,0.15f,0.4f,0.16f,0.12f,0.36f,0.10f);
-        // A small 3D fruit stand and floating produce anchor the conversation in a market scene.\n        sphere(-0.05f,-1.62f,-0.65f,1.55f,0.12f,0.34f,0.38f,0.20f,0.10f);\n        sphere(-0.72f,-1.35f,-0.55f,0.20f,0.20f,0.20f,0.95f,0.16f,0.10f);\n        sphere(-0.22f,-1.34f,-0.55f,0.20f,0.20f,0.20f,0.95f,0.72f,0.12f);\n        sphere(0.28f,-1.35f,-0.55f,0.20f,0.20f,0.20f,0.28f,0.72f,0.20f);\n        ByteBuffer buf=ByteBuffer.allocateDirect(W*H*4).order(ByteOrder.nativeOrder());
+        // A small 3D fruit stand and floating produce anchor the conversation in a market scene.
+        sphere(-0.05f,-1.62f,-0.65f,1.55f,0.12f,0.34f,0.38f,0.20f,0.10f);
+        sphere(-0.72f,-1.35f,-0.55f,0.20f,0.20f,0.20f,0.95f,0.16f,0.10f);
+        sphere(-0.22f,-1.34f,-0.55f,0.20f,0.20f,0.20f,0.95f,0.72f,0.12f);
+        sphere(0.28f,-1.35f,-0.55f,0.20f,0.20f,0.20f,0.28f,0.72f,0.20f);
+        ByteBuffer buf=ByteBuffer.allocateDirect(W*H*4).order(ByteOrder.nativeOrder());
         GLES20.glFinish();
         GLES20.glReadPixels(0,0,W,H,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE,buf);
         buf.rewind();
