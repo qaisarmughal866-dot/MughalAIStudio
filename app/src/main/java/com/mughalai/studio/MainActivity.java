@@ -28,8 +28,7 @@ import java.util.concurrent.Executors;
 public class MainActivity extends Activity {
     private EditText story;
     private Spinner duration, language;
-    private TextView status, createButton, creditsView;
-    private static final int DAILY_FREE_CREDITS = 2;
+    private TextView status, createButton;
     private final ExecutorService worker =
             Executors.newSingleThreadExecutor();
 
@@ -110,17 +109,6 @@ public class MainActivity extends Activity {
         duration = addSpinner(root,"Video Duration",
                 new String[]{"2 minutes","4 minutes","6 minutes"});
 
-        creditsView = new TextView(this);
-        creditsView.setTextColor(gold);
-        creditsView.setTextSize(15);
-        creditsView.setGravity(Gravity.CENTER);
-        creditsView.setPadding(0,dp(14),0,dp(8));
-        root.addView(creditsView);
-        refreshCreditsLabel();
-
-        addButton(root,"⚙  مفت AI کنکشن سیٹ کریں",green,Color.WHITE)
-                .setOnClickListener(v -> showAiKeyDialog());
-
         TextView make = addButton(root,
                 "CREATE FREE CARTOON MP4",gold,dark);
         make.setOnClickListener(v -> createVideo());
@@ -135,7 +123,7 @@ public class MainActivity extends Activity {
         note.setTextColor(Color.LTGRAY);
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
-        note.setText("مفت آف لائن کارٹون ورژن۔ حقیقی AI تھری ڈی ویڈیو ابھی شامل نہیں؛ روزانہ مفت کریڈٹس اسی فون میں محفوظ ہیں۔");
+        note.setText("مفت آف لائن 2.5D کارٹون اینیمیشن، فون کی آواز اور سب ٹائٹلز۔ حقیقی جنریٹو 3D ویڈیو اس ورژن میں شامل نہیں۔ کوئی ادائیگی یا روزانہ کریڈٹ حد نہیں۔");
         root.addView(note);
 
         setContentView(scroll);
@@ -188,37 +176,10 @@ public class MainActivity extends Activity {
         return s;
     }
 
-    private void showAiKeyDialog() {
-        EditText keyInput = new EditText(this);
-        keyInput.setSingleLine(true);
-        keyInput.setHint("Google AI Studio API key");
-        keyInput.setInputType(129);
-        keyInput.setText(getSharedPreferences("ai_settings", MODE_PRIVATE)
-                .getString("gemini_api_key", ""));
-        new AlertDialog.Builder(this)
-                .setTitle("مفت AI کنکشن")
-                .setMessage("Google AI Studio سے اپنی مفت Gemini API key حاصل کر کے یہاں درج کریں۔ ایپ میں کوئی ادائیگی یا خودکار بلنگ فعال نہیں کی جائے گی۔")
-                .setView(keyInput)
-                .setPositiveButton("محفوظ کریں", (d,w) -> {
-                    getSharedPreferences("ai_settings", MODE_PRIVATE).edit()
-                            .putString("gemini_api_key", keyInput.getText().toString().trim())
-                            .apply();
-                    Toast.makeText(this,"AI key محفوظ ہو گئی",Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("منسوخ",null)
-                .show();
-    }
-
     private void createVideo() {
         String text = story.getText().toString().trim();
         if (text.isEmpty()) {
             story.setError("Please write your story");
-            return;
-        }
-
-        if (getAvailableCredits() < 1) {
-            status.setText("آج کے مفت کریڈٹس ختم ہو گئے۔ نئے کریڈٹس اگلے دن خود مل جائیں گے۔");
-            refreshCreditsLabel();
             return;
         }
 
@@ -242,13 +203,8 @@ public class MainActivity extends Activity {
                         "Cartoon_" + System.currentTimeMillis() + ".mp4");
                 final File target = output;
 
-                String apiKey = getSharedPreferences("ai_settings", MODE_PRIVATE)
-                        .getString("gemini_api_key", "");
-                if (apiKey.trim().isEmpty()) {
-                    throw new Exception("پہلے مفت AI کنکشن کی API key درج کریں۔");
-                }
-                runOnUiThread(() -> status.setText("AI کہانی کے مناظر تیار کر رہا ہے..."));
-                String sceneScript = GeminiStoryPlanner.createSceneScript(text, apiKey);
+                runOnUiThread(() -> status.setText("کہانی کے مناظر ترتیب دیے جا رہے ہیں..."));
+                String sceneScript = GeminiStoryPlanner.createOfflineSceneScript(text);
                 runOnUiThread(() -> status.setText("مناظر تیار؛ کارٹون ویڈیو بن رہی ہے..."));
                 VideoRenderer.render(sceneScript,target,minutes,english,
                         (frame,total) -> runOnUiThread(() ->
@@ -277,10 +233,8 @@ public class MainActivity extends Activity {
                 }
 
                 String message = saveToGallery(target);
-                spendOneCredit();
                 runOnUiThread(() -> {
-                    refreshCreditsLabel();
-                    status.setText("Video created!\n" + message);
+                    status.setText("ویڈیو بن گئی!\n" + message);
                     createButton.setEnabled(true);
                 });
             } catch (Exception e) {
@@ -293,33 +247,6 @@ public class MainActivity extends Activity {
                 });
             }
         });
-    }
-
-    private int getAvailableCredits() {
-        android.content.SharedPreferences prefs =
-                getSharedPreferences("daily_free_credits", MODE_PRIVATE);
-        String today = new SimpleDateFormat("yyyyMMdd", Locale.US)
-                .format(new Date());
-        String savedDay = prefs.getString("day", "");
-        if (!today.equals(savedDay)) {
-            prefs.edit().putString("day", today)
-                    .putInt("credits", DAILY_FREE_CREDITS).apply();
-        }
-        return prefs.getInt("credits", DAILY_FREE_CREDITS);
-    }
-
-    private void spendOneCredit() {
-        android.content.SharedPreferences prefs =
-                getSharedPreferences("daily_free_credits", MODE_PRIVATE);
-        int remaining = Math.max(0, getAvailableCredits() - 1);
-        prefs.edit().putInt("credits", remaining).apply();
-    }
-
-    private void refreshCreditsLabel() {
-        if (creditsView == null) return;
-        creditsView.setText("روزانہ مفت کریڈٹس: " + getAvailableCredits()
-                + " / " + DAILY_FREE_CREDITS
-                + "\\nاگلے دن کریڈٹس خود دوبارہ مل جائیں گے");
     }
 
     private void copyFile(File source, File destination) throws Exception {
