@@ -93,7 +93,8 @@ public final class GeminiImageGenerator {
             }
             String responseText = new String(bytes.toByteArray(), "UTF-8");
             if (status < 200 || status >= 300) {
-                if (status == 429) throw new Exception("Image API quota/billing limit reached. Check Google AI Studio.");
+                if (status == 429) throw new Exception("GEMINI_QUOTA: Google Gemini ki image-generation quota ya billing limit poori ho gayi hai. Google AI Studio > Usage aur Billing check karein. " + responseText.substring(0, Math.min(300, responseText.length())));
+                if (status == 400 || status == 403) throw new Exception("GEMINI_KEY: API key, image model access, project permission, ya billing configuration check karein. " + responseText.substring(0, Math.min(240, responseText.length())));
                 throw new Exception("3D image generation failed (HTTP " + status + "): " +
                         responseText.substring(0, Math.min(240, responseText.length())));
             }
