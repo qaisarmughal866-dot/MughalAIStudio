@@ -427,6 +427,9 @@ public final class VideoRenderer {
 
         // Story-specific props and characters.
         boolean appleStory = s.contains("سیب") || s.contains("سیبوں") || s.contains("apple");
+        boolean snakeStory = s.contains("سانپ") || s.contains("snake");
+        boolean holeStory = s.contains("بل") || s.contains("سوراخ") || s.contains("کھوہ") || s.contains("hole") || s.contains("burrow");
+        boolean enteringAction = s.contains("داخل") || s.contains("گھس") || s.contains("اندر") || s.contains("enter") || s.contains("crawl into") || s.contains("going in");
         boolean rabbitStory = s.contains("خرگوش") || s.contains("rabbit") || appleStory;
         boolean turtleStory = s.contains("کچھوا") || s.contains("کچوا") || s.contains("turtle") || s.contains("tortoise");
         boolean raceAction = s.contains("دوڑ") || s.contains("ریس") || s.contains("race") || s.contains("running");
@@ -463,6 +466,38 @@ public final class VideoRenderer {
         }
         if (potatoStory || tomatoStory) {
             // Vegetable characters are drawn above instead of the generic figure.
+        } else if (snakeStory) {
+            // A visible burrow plus a snake whose head gradually disappears inside it.
+            float hx = 930f;
+            float hy = 465f;
+            if (holeStory) {
+                p.setColor(Color.rgb(95, 65, 42));
+                canvas.drawOval(hx-92, hy-30, hx+92, hy+38, p);
+                p.setColor(Color.rgb(35, 25, 20));
+                canvas.drawOval(hx-72, hy-22, hx+72, hy+26, p);
+                p.setColor(Color.rgb(130, 95, 62));
+                canvas.drawArc(hx-95, hy-38, hx+95, hy+42, 180, 180, false, p);
+            }
+            float travel = enteringAction && holeStory ? Math.min(1f, (frame % 300) / 240f) : 0.18f;
+            float headX = 500f + travel * 390f;
+            float headY = 390f + (float)Math.sin(frame * 0.09f) * 8f;
+            p.setColor(Color.rgb(45, 125, 65));
+            p.setStrokeWidth(34);
+            p.setStrokeCap(Paint.Cap.ROUND);
+            // Body curves toward the burrow; its visible length shortens as it enters.
+            float tailX = headX - (enteringAction ? 240f * (1f-travel*0.55f) : 210f);
+            canvas.drawLine(tailX, headY+28, headX-65, headY+8, p);
+            canvas.drawLine(headX-65, headY+8, headX-22, headY+17, p);
+            canvas.drawLine(headX-22, headY+17, headX, headY, p);
+            p.setStrokeWidth(1);
+            p.setColor(Color.rgb(65, 155, 75));
+            canvas.drawCircle(headX, headY, 27, p);
+            p.setColor(Color.rgb(245, 225, 75));
+            canvas.drawCircle(headX+10, headY-8, 5, p);
+            p.setColor(Color.BLACK);
+            canvas.drawCircle(headX+12, headY-8, 2.5f, p);
+            p.setColor(Color.rgb(210, 65, 55));
+            canvas.drawLine(headX+24, headY+4, headX+39, headY+8, p);
         } else if (rabbitStory && turtleStory) {
             // Keep both race participants visible and animate them moving along the track.
             float progress = raceAction ? (frame % 240) * 1.25f : 0f;
