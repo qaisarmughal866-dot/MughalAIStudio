@@ -131,7 +131,7 @@ public final class SceneGraphRenderer {
         float phase=frame*0.16f+index*1.8f;
         float x=count==1?650:260+index*(760f/Math.max(1,count-1));
         float y=sea && st.actor==Actor.FISH?420:455;
-        float move=(st.action==Action.RUN?Math.sin(phase)*90:st.action==Action.WALK?Math.sin(phase)*38:st.action==Action.JUMP?Math.abs((float)Math.sin(phase))*65:0);
+        float move=(float)(st.action==Action.RUN?Math.sin(phase)*90:st.action==Action.WALK?Math.sin(phase)*38:st.action==Action.JUMP?Math.abs(Math.sin(phase))*65:0);
         x+=move;
         if(st.action==Action.FLY) y=270+(float)Math.sin(phase)*35;
         if(st.action==Action.SWIM) y=430+(float)Math.sin(phase)*20;
