@@ -3,6 +3,7 @@ package com.mughalai.studio;
 
 import android.graphics.Canvas;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
@@ -35,6 +36,11 @@ public final class VideoRenderer {
             int minutes,
             boolean english,
             Progress progress) throws Exception {
+        render(story, output, minutes, english, progress, null);
+    }
+
+    public static void render(String story, File output, int minutes,
+            boolean english, Progress progress, File[] sceneImages) throws Exception {
 
         if (story == null || story.trim().isEmpty()) {
             throw new IllegalArgumentException("Story is empty");
@@ -57,6 +63,11 @@ public final class VideoRenderer {
         boolean useReal3D = lowerStory.contains("آلو") ||
                 lowerStory.contains("الو") || lowerStory.contains("ٹماٹر") ||
                 lowerStory.contains("tomato") || lowerStory.contains("potato");
+
+        Bitmap[] generatedFrames = new Bitmap[sceneImages == null ? 0 : sceneImages.length];
+        for (int i = 0; i < generatedFrames.length; i++) {
+            generatedFrames[i] = BitmapFactory.decodeFile(sceneImages[i].getAbsolutePath());
+        }
 
         boolean muxerStarted = false;
         int trackIndex = -1;
@@ -120,7 +131,14 @@ public final class VideoRenderer {
                 Canvas canvas = surface.lockCanvas(null);
 
                 try {
-                    StorySceneRenderer.draw(canvas, scenes[sceneIndex], frame, english);
+                    if (generatedFrames.length > 0) {
+                        int imageIndex = Math.min(generatedFrames.length - 1,
+                                (int)((long)sceneIndex * generatedFrames.length / Math.max(1, scenes.length)));
+                        CartoonFrameRenderer.draw(canvas, generatedFrames[imageIndex],
+                                scenes[sceneIndex], frame, english);
+                    } else {
+                        StorySceneRenderer.draw(canvas, scenes[sceneIndex], frame, english);
+                    }
                     
                 } finally {
                     surface.unlockCanvasAndPost(canvas);
@@ -228,6 +246,9 @@ public final class VideoRenderer {
         } finally {
 
             
+            for (Bitmap bitmap : generatedFrames) {
+                if (bitmap != null && !bitmap.isRecycled()) bitmap.recycle();
+            }
             if (encoder != null) {
                 try { encoder.stop(); }
                 catch (Exception ignored) { }
