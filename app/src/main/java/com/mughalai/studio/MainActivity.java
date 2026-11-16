@@ -118,6 +118,9 @@ public class MainActivity extends Activity {
         root.addView(creditsView);
         refreshCreditsLabel();
 
+        addButton(root,"⚙  مفت AI کنکشن سیٹ کریں",green,Color.WHITE)
+                .setOnClickListener(v -> showAiKeyDialog());
+
         TextView make = addButton(root,
                 "CREATE FREE CARTOON MP4",gold,dark);
         make.setOnClickListener(v -> createVideo());
@@ -185,6 +188,27 @@ public class MainActivity extends Activity {
         return s;
     }
 
+    private void showAiKeyDialog() {
+        EditText keyInput = new EditText(this);
+        keyInput.setSingleLine(true);
+        keyInput.setHint("Google AI Studio API key");
+        keyInput.setInputType(129);
+        keyInput.setText(getSharedPreferences("ai_settings", MODE_PRIVATE)
+                .getString("gemini_api_key", ""));
+        new AlertDialog.Builder(this)
+                .setTitle("مفت AI کنکشن")
+                .setMessage("Google AI Studio سے اپنی مفت Gemini API key حاصل کر کے یہاں درج کریں۔ ایپ میں کوئی ادائیگی یا خودکار بلنگ فعال نہیں کی جائے گی۔")
+                .setView(keyInput)
+                .setPositiveButton("محفوظ کریں", (d,w) -> {
+                    getSharedPreferences("ai_settings", MODE_PRIVATE).edit()
+                            .putString("gemini_api_key", keyInput.getText().toString().trim())
+                            .apply();
+                    Toast.makeText(this,"AI key محفوظ ہو گئی",Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("منسوخ",null)
+                .show();
+    }
+
     private void createVideo() {
         String text = story.getText().toString().trim();
         if (text.isEmpty()) {
@@ -218,7 +242,15 @@ public class MainActivity extends Activity {
                         "Cartoon_" + System.currentTimeMillis() + ".mp4");
                 final File target = output;
 
-                VideoRenderer.render(text,target,minutes,english,
+                String apiKey = getSharedPreferences("ai_settings", MODE_PRIVATE)
+                        .getString("gemini_api_key", "");
+                if (apiKey.trim().isEmpty()) {
+                    throw new Exception("پہلے مفت AI کنکشن کی API key درج کریں۔");
+                }
+                runOnUiThread(() -> status.setText("AI کہانی کے مناظر تیار کر رہا ہے..."));
+                String sceneScript = GeminiStoryPlanner.createSceneScript(text, apiKey);
+                runOnUiThread(() -> status.setText("مناظر تیار؛ کارٹون ویڈیو بن رہی ہے..."));
+                VideoRenderer.render(sceneScript,target,minutes,english,
                         (frame,total) -> runOnUiThread(() ->
                                 status.setText("Rendering video: " +
                                         (frame * 100 / total) + "%")));
