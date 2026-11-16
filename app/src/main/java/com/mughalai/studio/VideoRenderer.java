@@ -428,7 +428,9 @@ public final class VideoRenderer {
         // Story-specific props and characters.
         boolean appleStory = s.contains("سیب") || s.contains("سیبوں") || s.contains("apple");
         boolean rabbitStory = s.contains("خرگوش") || s.contains("rabbit") || appleStory;
-        boolean birdStory = s.contains("چڑیا") || s.contains("پرند") || s.contains("bird");
+        boolean pigeonStory = s.contains("کبوتر") || s.contains("pigeon");
+        boolean sparrowStory = s.contains("چڑیا") || s.contains("sparrow");
+        boolean birdStory = pigeonStory || sparrowStory || s.contains("پرند") || s.contains("bird");
         boolean lionStory = s.contains("شیر") || s.contains("lion");
         boolean princessStory = s.contains("شہزادی") || s.contains("princess");
         if (potatoStory || tomatoStory) {
@@ -479,21 +481,45 @@ public final class VideoRenderer {
                 canvas.drawCircle(x+70, 445+bob, 22, p);
             }
         } else if (birdStory) {
-            float x = 660 + (float)Math.sin(frame * 0.06) * 70;
-            float y = 335 + (float)Math.sin(frame * 0.12) * 24;
-            p.setColor(Color.rgb(245, 190, 45));
-            canvas.drawCircle(x,y,48,p);
-            canvas.drawCircle(x+36,y-48,30,p);
-            p.setColor(Color.rgb(245, 130, 35));
-            canvas.drawLine(x+62,y-48,x+91,y-38,p);
-            canvas.drawLine(x+91,y-38,x+62,y-27,p);
-            canvas.drawLine(x+62,y-27,x+62,y-48,p);
-            p.setColor(Color.WHITE);
-            canvas.drawCircle(x+45,y-55,9,p);
-            p.setColor(Color.BLACK);
-            canvas.drawCircle(x+48,y-55,4,p);
-            p.setColor(Color.rgb(245, 190, 45));
-            canvas.drawOval(x-68,y-4,x-12,y+35,p);
+            // Draw each named bird as its own recognizable character.
+            // When both names occur, show both together rather than replacing one.
+            if (pigeonStory) {
+                float x = sparrowStory ? 455 : 650;
+                float y = 365 + (float)Math.sin(frame * 0.10) * 8;
+                p.setColor(Color.rgb(175, 185, 198));
+                canvas.drawOval(x-78,y-43,x+75,y+48,p);
+                p.setColor(Color.rgb(215, 220, 228));
+                canvas.drawOval(x-34,y-88,x+38,y-18,p);
+                p.setColor(Color.rgb(80, 105, 125));
+                canvas.drawOval(x-62,y-22,x+24,y+35,p);
+                p.setColor(Color.rgb(45, 65, 85));
+                canvas.drawCircle(x+18,y-62,6,p);
+                p.setColor(Color.rgb(230, 145, 45));
+                canvas.drawLine(x+34,y-55,x+65,y-48,p);
+                canvas.drawLine(x+65,y-48,x+35,y-40,p);
+                p.setStrokeWidth(5);
+                canvas.drawLine(x-15,y+42,x-20,y+65,p);
+                canvas.drawLine(x+18,y+42,x+22,y+65,p);
+                p.setStrokeWidth(1);
+            }
+            if (sparrowStory || (!pigeonStory && birdStory)) {
+                float x = pigeonStory ? 850 : 650;
+                float y = 350 + (float)Math.sin(frame * 0.12) * 12;
+                p.setColor(Color.rgb(145, 92, 55));
+                canvas.drawOval(x-55,y-28,x+48,y+35,p);
+                p.setColor(Color.rgb(185, 135, 85));
+                canvas.drawCircle(x+24,y-45,30,p);
+                p.setColor(Color.rgb(105, 65, 40));
+                canvas.drawOval(x-45,y-20,x+12,y+28,p);
+                p.setColor(Color.BLACK);
+                canvas.drawCircle(x+33,y-52,5,p);
+                p.setColor(Color.rgb(235, 155, 45));
+                canvas.drawLine(x+48,y-42,x+72,y-36,p);
+                p.setStrokeWidth(4);
+                canvas.drawLine(x-8,y+32,x-12,y+53,p);
+                canvas.drawLine(x+18,y+32,x+22,y+53,p);
+                p.setStrokeWidth(1);
+            }
         } else {
             float x = 690 + (float)Math.sin(frame * 0.035) * 55;
             float step = (float)Math.sin(frame * 0.22) * 20;
