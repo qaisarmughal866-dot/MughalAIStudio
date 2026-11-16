@@ -90,7 +90,18 @@ public final class VideoRenderer {
             MediaCodec.BufferInfo info =
                     new MediaCodec.BufferInfo();
 
+            long renderStartNs = System.nanoTime();
             for (int frame = 0; frame < totalFrames; frame++) {
+                // Pace frames at the selected FPS so encoded duration matches minutes.
+                long targetNs = renderStartNs + (long) frame * 1000000000L / FPS;
+                while (System.nanoTime() < targetNs) {
+                    long remainingMs = (targetNs - System.nanoTime()) / 1000000L;
+                    try { Thread.sleep(Math.max(1L, Math.min(10L, remainingMs))); }
+                    catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new Exception("Video rendering interrupted", e);
+                    }
+                }
 
                 int sceneIndex = Math.min(
                         scenes.length - 1,
@@ -306,26 +317,92 @@ public final class VideoRenderer {
             }
         }
 
-        // Animated cartoon hero: bobbing body and swinging legs/arms
-        float x = 690 + (float) Math.sin(frame * 0.035) * 55;
-        float step = (float) Math.sin(frame * 0.22) * 20;
-        p.setColor(Color.rgb(45, 30, 25));
-        canvas.drawCircle(x, 315, 62, p);
-        p.setColor(Color.rgb(240, 190, 145));
-        canvas.drawCircle(x, 340, 47, p);
-        p.setColor(Color.BLACK);
-        canvas.drawCircle(x - 16, 332, 6, p);
-        canvas.drawCircle(x + 16, 332, 6, p);
-        p.setColor(Color.rgb(30, 70, 160));
-        canvas.drawRect(x - 35, 385, x + 35, 490, p);
-        p.setColor(Color.rgb(240, 190, 145));
-        p.setStrokeWidth(15);
-        canvas.drawLine(x - 30, 405, x - 65, 445 + step, p);
-        canvas.drawLine(x + 30, 405, x + 65, 445 - step, p);
-        p.setColor(Color.rgb(35, 35, 45));
-        p.setStrokeWidth(18);
-        canvas.drawLine(x - 15, 490, x - 22 + step, 535, p);
-        canvas.drawLine(x + 15, 490, x + 22 - step, 535, p);
+        // Story-specific props and characters.
+        boolean appleStory = s.contains("سیب") || s.contains("سیبوں") || s.contains("apple");
+        boolean rabbitStory = s.contains("خرگوش") || s.contains("rabbit") || appleStory;
+        boolean birdStory = s.contains("چڑیا") || s.contains("پرند") || s.contains("bird");
+        boolean lionStory = s.contains("شیر") || s.contains("lion");
+        boolean princessStory = s.contains("شہزادی") || s.contains("princess");
+        if (appleStory) {
+            // Large apple tree with a visible trunk, leafy crown and red apples.
+            p.setColor(Color.rgb(105, 65, 35));
+            canvas.drawRect(880, 300, 950, 560, p);
+            p.setColor(Color.rgb(35, 125, 55));
+            canvas.drawCircle(915, 255, 145, p);
+            canvas.drawCircle(820, 300, 90, p);
+            canvas.drawCircle(1005, 300, 95, p);
+            p.setColor(Color.rgb(210, 35, 45));
+            float[][] apples = {{850,205},{930,175},{1000,245},{815,300},{925,315},{1015,350},{880,385}};
+            for (float[] a : apples) {
+                canvas.drawCircle(a[0], a[1], 17, p);
+                p.setColor(Color.rgb(70, 115, 45));
+                canvas.drawLine(a[0], a[1]-15, a[0]+4, a[1]-25, p);
+                p.setColor(Color.rgb(210, 35, 45));
+            }
+        }
+        if (rabbitStory) {
+            float x = 560 + (float)Math.sin(frame * 0.035) * 28;
+            float bob = (float)Math.sin(frame * 0.18) * 5;
+            p.setColor(Color.rgb(238, 232, 220));
+            canvas.drawOval(x-42, 390+bob, x+42, 485+bob, p);
+            canvas.drawCircle(x, 355+bob, 48, p);
+            canvas.drawOval(x-34, 255+bob, x-8, 330+bob, p);
+            canvas.drawOval(x+8, 255+bob, x+34, 330+bob, p);
+            p.setColor(Color.rgb(245, 155, 165));
+            canvas.drawOval(x-27, 266+bob, x-15, 318+bob, p);
+            canvas.drawOval(x+15, 266+bob, x+27, 318+bob, p);
+            p.setColor(Color.BLACK);
+            canvas.drawCircle(x-16, 350+bob, 5, p);
+            canvas.drawCircle(x+16, 350+bob, 5, p);
+            canvas.drawCircle(x, 370+bob, 6, p);
+            p.setColor(Color.rgb(238, 232, 220));
+            canvas.drawCircle(x-48, 470+bob, 17, p);
+            if (appleStory) {
+                p.setColor(Color.rgb(210, 35, 45));
+                canvas.drawCircle(x+70, 445+bob, 22, p);
+            }
+        } else if (birdStory) {
+            float x = 660 + (float)Math.sin(frame * 0.06) * 70;
+            float y = 335 + (float)Math.sin(frame * 0.12) * 24;
+            p.setColor(Color.rgb(245, 190, 45));
+            canvas.drawCircle(x,y,48,p);
+            canvas.drawCircle(x+36,y-48,30,p);
+            p.setColor(Color.rgb(245, 130, 35));
+            canvas.drawLine(x+62,y-48,x+91,y-38,p);\n            canvas.drawLine(x+91,y-38,x+62,y-27,p);\n            canvas.drawLine(x+62,y-27,x+62,y-48,p);
+            p.setColor(Color.WHITE);
+            canvas.drawCircle(x+45,y-55,9,p);
+            p.setColor(Color.BLACK);
+            canvas.drawCircle(x+48,y-55,4,p);
+            p.setColor(Color.rgb(245, 190, 45));
+            canvas.drawOval(x-68,y-4,x-12,y+35,p);
+        } else {
+            float x = 690 + (float)Math.sin(frame * 0.035) * 55;
+            float step = (float)Math.sin(frame * 0.22) * 20;
+            p.setColor(lionStory ? Color.rgb(180,115,35) : princessStory ? Color.rgb(245,190,210) : Color.rgb(45,30,25));
+            canvas.drawCircle(x,315,62,p);
+            p.setColor(lionStory ? Color.rgb(235,175,65) : Color.rgb(240,190,145));
+            canvas.drawCircle(x,340,47,p);
+            p.setColor(Color.BLACK);
+            canvas.drawCircle(x-16,332,6,p);
+            canvas.drawCircle(x+16,332,6,p);
+            p.setColor(lionStory ? Color.rgb(190,125,35) : princessStory ? Color.rgb(170,55,115) : Color.rgb(30,70,160));
+            canvas.drawRect(x-35,385,x+35,490,p);
+            p.setColor(Color.rgb(240,190,145));
+            p.setStrokeWidth(15);
+            canvas.drawLine(x-30,405,x-65,445+step,p);
+            canvas.drawLine(x+30,405,x+65,445-step,p);
+            p.setColor(Color.rgb(35,35,45));
+            p.setStrokeWidth(18);
+            canvas.drawLine(x-15,490,x-22+step,535,p);
+            canvas.drawLine(x+15,490,x+22-step,535,p);
+            if (lionStory) {
+                p.setColor(Color.rgb(170,115,35));
+                for(int i=0;i<8;i++) {
+                    double a=i*Math.PI/4;
+                    canvas.drawCircle(x+(float)Math.cos(a)*65,315+(float)Math.sin(a)*65,17,p);
+                }
+            }
+        }
 
         // Subtitles
         p.setColor(Color.argb(220, 0, 0, 0));
