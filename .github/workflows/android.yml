@@ -23,3 +23,5 @@ jobs:
         with:
           name: MughalAIStudio-APK
           path: app/build/outputs/apk/debug/*.apk
+
+# Rebuild APK for the latest main branch changes.
