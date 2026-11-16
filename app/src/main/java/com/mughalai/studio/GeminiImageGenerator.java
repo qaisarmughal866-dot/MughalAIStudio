@@ -14,7 +14,7 @@ import org.json.JSONObject;
 
 /** Generates actual 16:9 story frames with Gemini image generation. */
 public final class GeminiImageGenerator {
-    private static final String MODEL = "gemini-3.1-flash-image";
+    private static final String MODEL = "gemini-2.5-flash-image";
     private GeminiImageGenerator() {}
 
     public static File[] generateSceneImages(String script, String apiKey,
