@@ -427,9 +427,10 @@ public final class VideoRenderer {
 
         // Story-specific props and characters.
         boolean appleStory = s.contains("سیب") || s.contains("سیبوں") || s.contains("apple");
-        boolean snakeStory = s.contains("سانپ") || s.contains("snake");
-        boolean holeStory = s.contains("بل") || s.contains("سوراخ") || s.contains("کھوہ") || s.contains("hole") || s.contains("burrow");
-        boolean enteringAction = s.contains("داخل") || s.contains("گھس") || s.contains("اندر") || s.contains("enter") || s.contains("crawl into") || s.contains("going in");
+        StorySceneParser.ScenePlan plan = StorySceneParser.parse(s);
+        boolean snakeStory = plan.has(StorySceneParser.Entity.SNAKE);
+        boolean holeStory = plan.at(StorySceneParser.Place.BURROW);
+        boolean enteringAction = plan.does(StorySceneParser.Action.ENTER);
         boolean rabbitStory = s.contains("خرگوش") || s.contains("rabbit") || appleStory;
         boolean turtleStory = s.contains("کچھوا") || s.contains("کچوا") || s.contains("turtle") || s.contains("tortoise");
         boolean raceAction = s.contains("دوڑ") || s.contains("ریس") || s.contains("race") || s.contains("running");
