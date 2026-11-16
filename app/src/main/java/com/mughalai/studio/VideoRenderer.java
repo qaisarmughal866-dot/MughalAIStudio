@@ -120,7 +120,7 @@ public final class VideoRenderer {
                 Canvas canvas = surface.lockCanvas(null);
 
                 try {
-                    SceneGraphRenderer.draw(canvas, scenes[sceneIndex], frame, english);
+                    StorySceneRenderer.draw(canvas, scenes[sceneIndex], frame, english);
                     
                 } finally {
                     surface.unlockCanvasAndPost(canvas);
