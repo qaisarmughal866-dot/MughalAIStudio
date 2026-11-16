@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
-    private EditText story;
+    private EditText story, apiKey;
     private Spinner duration, language;
     private TextView status, createButton;
     private final ExecutorService worker =
@@ -103,6 +103,32 @@ public class MainActivity extends Activity {
         story.setPadding(dp(14),dp(14),dp(14),dp(14));
         story.setBackground(box(Color.rgb(24,57,47)));
         root.addView(story,new LinearLayout.LayoutParams(-1,dp(145)));
+
+        TextView apiLabel = new TextView(this);
+        apiLabel.setText("Gemini AI API Key (optional)");
+        apiLabel.setTextColor(gold);
+        apiLabel.setTextSize(15);
+        apiLabel.setPadding(0,dp(16),0,dp(5));
+        root.addView(apiLabel);
+
+        apiKey = new EditText(this);
+        apiKey.setTextColor(Color.WHITE);
+        apiKey.setHintTextColor(Color.LTGRAY);
+        apiKey.setHint("Paste your Google AI Studio API key");
+        apiKey.setSingleLine(true);
+        apiKey.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
+                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        apiKey.setPadding(dp(14),dp(12),dp(14),dp(12));
+        apiKey.setBackground(box(Color.rgb(24,57,47)));
+        apiKey.setText(getSharedPreferences("mughal_settings",MODE_PRIVATE)
+                .getString("gemini_api_key",""));
+        root.addView(apiKey,new LinearLayout.LayoutParams(-1,dp(54)));
+
+        TextView apiNote = new TextView(this);
+        apiNote.setText("API key کے ساتھ AI کہانی کو الگ الگ مناظر میں تقسیم کرے گی۔ خالی چھوڑنے پر آف لائن موڈ چلے گا۔");
+        apiNote.setTextColor(Color.LTGRAY);
+        apiNote.setTextSize(12);
+        root.addView(apiNote);
 
         language = addSpinner(root,"Caption Language",
                 new String[]{"اردو","English"});
@@ -186,6 +212,9 @@ public class MainActivity extends Activity {
         final int minutes = Integer.parseInt(duration.getSelectedItem().toString().split(" ")[0]);
         final boolean english =
                 language.getSelectedItemPosition() == 1;
+        final String geminiKey = apiKey.getText().toString().trim();
+        getSharedPreferences("mughal_settings",MODE_PRIVATE).edit()
+                .putString("gemini_api_key",geminiKey).apply();
 
         createButton.setEnabled(false);
         status.setText("Preparing video...");
@@ -203,8 +232,13 @@ public class MainActivity extends Activity {
                         "Cartoon_" + System.currentTimeMillis() + ".mp4");
                 final File target = output;
 
-                runOnUiThread(() -> status.setText("کہانی کے مناظر ترتیب دیے جا رہے ہیں..."));
-                String sceneScript = OfflineStoryPlanner.createOfflineSceneScript(text);
+                runOnUiThread(() -> status.setText(
+                        geminiKey.isEmpty()
+                                ? "آف لائن مناظر ترتیب دیے جا رہے ہیں..."
+                                : "Gemini AI کہانی کے کردار اور مناظر بنا رہی ہے..."));
+                String sceneScript = geminiKey.isEmpty()
+                        ? OfflineStoryPlanner.createOfflineSceneScript(text)
+                        : GeminiStoryPlanner.createSceneScript(text,geminiKey);
                 runOnUiThread(() -> status.setText("مناظر تیار؛ کارٹون ویڈیو بن رہی ہے..."));
                 VideoRenderer.render(sceneScript,target,minutes,english,
                         (frame,total) -> runOnUiThread(() ->
