@@ -39,7 +39,6 @@ public final class VeoVideoGenerator {
                 .put("response_format", new JSONObject()
                         .put("type", "video")
                         .put("aspect_ratio", "16:9")
-                        .put("duration", "10s")
                         .put("resolution", "720p")
                         .put("delivery", "uri"));
 
@@ -155,7 +154,7 @@ public final class VeoVideoGenerator {
     private static void download(String uri, String apiKey, File output) throws Exception {
         HttpURLConnection c = null;
         try {
-            String address = uri + (uri.contains("?") ? "&" : "?") + "alt=media";
+            String address = uri;
             c = (HttpURLConnection) new URL(address).openConnection();
             c.setConnectTimeout(30000);
             c.setReadTimeout(180000);
