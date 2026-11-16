@@ -5,6 +5,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.graphics.RadialGradient;
+import android.graphics.Shader;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
@@ -242,6 +244,71 @@ public final class VideoRenderer {
         }
     }
 
+
+    private static void draw3DVegetable(Canvas canvas, Paint p,
+            float x, float y, float radius, int base, int shade,
+            int frame, boolean tomato) {
+        float bounce = (float)Math.sin(frame * 0.22f) * 5f;
+        float cy = y + bounce;
+        p.setShader(null);
+        p.setColor(Color.argb(75, 20, 25, 20));
+        canvas.drawOval(x-radius*0.72f, cy+radius*0.82f,
+                x+radius*0.72f, cy+radius*1.02f, p);
+        int light = tomato ? Color.rgb(255, 150, 115) : Color.rgb(245, 205, 135);
+        p.setShader(new RadialGradient(x-radius*0.28f, cy-radius*0.35f,
+                radius*1.45f, new int[]{light, base, shade},
+                new float[]{0f, 0.58f, 1f}, Shader.TileMode.CLAMP));
+        canvas.drawOval(x-radius*0.9f, cy-radius*0.95f,
+                x+radius*0.9f, cy+radius*0.95f, p);
+        p.setShader(null);
+        p.setColor(Color.argb(100,255,255,255));
+        canvas.drawOval(x-radius*0.52f, cy-radius*0.62f,
+                x-radius*0.12f, cy-radius*0.25f, p);
+        if (tomato) {
+            p.setColor(Color.rgb(48, 125, 52));
+            for (int i=0;i<5;i++) {
+                float a = (float)(i*Math.PI*2/5);
+                canvas.drawLine(x, cy-radius*0.72f,
+                        x+(float)Math.cos(a)*25,
+                        cy-radius*0.72f+(float)Math.sin(a)*22, p);
+            }
+            canvas.drawCircle(x, cy-radius*0.73f, 12, p);
+        } else {
+            p.setColor(Color.rgb(105, 70, 38));
+            canvas.drawCircle(x-radius*0.35f, cy+radius*0.12f, 4, p);
+            canvas.drawCircle(x+radius*0.32f, cy-radius*0.20f, 4, p);
+            canvas.drawCircle(x+radius*0.08f, cy+radius*0.48f, 3, p);
+        }
+        float swing = (float)Math.sin(frame*0.22f)*17f;
+        p.setStrokeWidth(13);
+        p.setStrokeCap(Paint.Cap.ROUND);
+        p.setColor(shade);
+        canvas.drawLine(x-radius*0.72f, cy+radius*0.15f,
+                x-radius*1.12f, cy+radius*0.05f+swing, p);
+        canvas.drawLine(x+radius*0.72f, cy+radius*0.15f,
+                x+radius*1.12f, cy+radius*0.05f-swing, p);
+        canvas.drawLine(x-radius*0.28f, cy+radius*0.78f,
+                x-radius*0.34f, cy+radius*1.05f+swing*0.2f, p);
+        canvas.drawLine(x+radius*0.28f, cy+radius*0.78f,
+                x+radius*0.34f, cy+radius*1.05f-swing*0.2f, p);
+        p.setStrokeWidth(1);
+        p.setColor(Color.WHITE);
+        canvas.drawCircle(x-radius*0.25f, cy-radius*0.08f, 13, p);
+        canvas.drawCircle(x+radius*0.25f, cy-radius*0.08f, 13, p);
+        p.setColor(Color.rgb(35, 25, 20));
+        canvas.drawCircle(x-radius*0.22f, cy-radius*0.07f, 6, p);
+        canvas.drawCircle(x+radius*0.28f, cy-radius*0.07f, 6, p);
+        p.setColor(Color.rgb(255, 165, 155));
+        canvas.drawCircle(x-radius*0.48f, cy+radius*0.16f, 10, p);
+        canvas.drawCircle(x+radius*0.48f, cy+radius*0.16f, 10, p);
+        p.setColor(Color.rgb(75, 25, 25));
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeWidth(4);
+        canvas.drawArc(x-17, cy+radius*0.12f, x+17, cy+radius*0.45f,
+                15, 150, false, p);
+        p.setStyle(Paint.Style.FILL);
+    }
+
     private static void drawScene(
             Canvas canvas,
             String caption,
@@ -254,10 +321,14 @@ public final class VideoRenderer {
         boolean sea = s.contains("سمندر") || s.contains("دریا") || s.contains("کشتی") || s.contains("sea") || s.contains("ocean");
         boolean desert = s.contains("صحرا") || s.contains("ریگ") || s.contains("desert");
         boolean forest = s.contains("جنگل") || s.contains("درخت") || s.contains("سیب") || s.contains("apple") || s.contains("forest") || s.contains("tree");
+        boolean potatoStory = s.contains("آلو") || s.contains("potato");
+        boolean tomatoStory = s.contains("ٹماٹر") || s.contains("tomato");
+        boolean market = s.contains("بازار") || s.contains("دکان") || s.contains("market") || potatoStory || tomatoStory;
 
         canvas.drawColor(night ? Color.rgb(18, 27, 65) :
                 sea ? Color.rgb(105, 190, 220) :
                 desert ? Color.rgb(238, 184, 112) :
+                market ? Color.rgb(160, 205, 225) :
                 forest ? Color.rgb(115, 185, 205) : Color.rgb(112, 174, 222));
 
         // Sun or moon and drifting clouds
@@ -293,6 +364,23 @@ public final class VideoRenderer {
                 float wx = (i * 190 + frame * 2) % WIDTH;
                 canvas.drawLine(wx, 440 + (i % 3) * 24, wx + 65, 440 + (i % 3) * 24, p);
             }
+        } else if (market) {
+            p.setColor(Color.rgb(245, 225, 185));
+            canvas.drawRect(110, 260, 520, 505, p);
+            p.setColor(Color.rgb(165, 75, 45));
+            canvas.drawRect(90, 235, 540, 285, p);
+            for (int i = 0; i < 6; i++) {
+                p.setColor(i % 2 == 0 ? Color.rgb(220, 65, 55) : Color.rgb(250, 220, 105));
+                canvas.drawRect(95 + i * 73, 225, 168 + i * 73, 280, p);
+            }
+            p.setColor(Color.rgb(115, 70, 40));
+            canvas.drawRect(145, 390, 485, 430, p);
+            p.setColor(Color.rgb(230, 150, 45));
+            canvas.drawOval(165, 370, 245, 420, p);
+            p.setColor(Color.rgb(190, 45, 55));
+            canvas.drawOval(260, 365, 345, 420, p);
+            p.setColor(Color.rgb(90, 150, 65));
+            canvas.drawOval(360, 370, 455, 420, p);
         } else if (forest) {
             p.setColor(Color.rgb(65, 115, 55));
             for (int i = 0; i < 8; i++) {
@@ -323,6 +411,13 @@ public final class VideoRenderer {
         boolean birdStory = s.contains("چڑیا") || s.contains("پرند") || s.contains("bird");
         boolean lionStory = s.contains("شیر") || s.contains("lion");
         boolean princessStory = s.contains("شہزادی") || s.contains("princess");
+        if (potatoStory || tomatoStory) {
+            float walk = (float)Math.sin(frame * 0.11) * 9f;
+            draw3DVegetable(canvas, p, 570 + walk, 420, 88,
+                    Color.rgb(190, 132, 73), Color.rgb(112, 67, 35), frame, false);
+            draw3DVegetable(canvas, p, 825 - walk, 420, 82,
+                    Color.rgb(245, 68, 62), Color.rgb(145, 28, 34), frame, true);
+        }
         if (appleStory) {
             // Large apple tree with a visible trunk, leafy crown and red apples.
             p.setColor(Color.rgb(105, 65, 35));
@@ -340,7 +435,9 @@ public final class VideoRenderer {
                 p.setColor(Color.rgb(210, 35, 45));
             }
         }
-        if (rabbitStory) {
+        if (potatoStory || tomatoStory) {
+            // Vegetable characters are drawn above instead of the generic figure.
+        } else if (rabbitStory) {
             float x = 560 + (float)Math.sin(frame * 0.035) * 28;
             float bob = (float)Math.sin(frame * 0.18) * 5;
             p.setColor(Color.rgb(238, 232, 220));
