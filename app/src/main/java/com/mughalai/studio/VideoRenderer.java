@@ -2,6 +2,7 @@
 package com.mughalai.studio;
 
 import android.graphics.Canvas;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
@@ -51,11 +52,17 @@ public final class VideoRenderer {
         MediaCodec encoder = null;
         MediaMuxer muxer = null;
         Surface surface = null;
+        GLVegetableRenderer glVegetables = null;
+        String lowerStory = story.toLowerCase();
+        boolean useReal3D = lowerStory.contains("آلو") ||
+                lowerStory.contains("الو") || lowerStory.contains("ٹماٹر") ||
+                lowerStory.contains("tomato") || lowerStory.contains("potato");
 
         boolean muxerStarted = false;
         int trackIndex = -1;
 
         try {
+            if (useReal3D) glVegetables = new GLVegetableRenderer();
             MediaFormat format = MediaFormat.createVideoFormat(
                     MediaFormat.MIMETYPE_VIDEO_AVC,
                     WIDTH, HEIGHT);
@@ -116,6 +123,15 @@ public final class VideoRenderer {
                     drawScene(canvas,
                             scenes[sceneIndex],
                             frame, english);
+                    if (glVegetables != null) {
+                        Bitmap threeDFrame = glVegetables.render(frame);
+                        try {
+                            Paint overlay = new Paint(Paint.FILTER_BITMAP_FLAG);
+                            canvas.drawBitmap(threeDFrame, 0f, 0f, overlay);
+                        } finally {
+                            threeDFrame.recycle();
+                        }
+                    }
                 } finally {
                     surface.unlockCanvasAndPost(canvas);
                 }
@@ -221,6 +237,10 @@ public final class VideoRenderer {
 
         } finally {
 
+            if (glVegetables != null) {
+                try { glVegetables.close(); }
+                catch (Exception ignored) { }
+            }
             if (encoder != null) {
                 try { encoder.stop(); }
                 catch (Exception ignored) { }
