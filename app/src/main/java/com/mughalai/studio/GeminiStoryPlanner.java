@@ -57,9 +57,9 @@ public final class GeminiStoryPlanner {
             }
             String responseText = new String(bytes.toByteArray(), "UTF-8");
             if (status < 200 || status >= 300) {
-                if (status == 429) throw new Exception("گوگل کی استعمال کی حد پوری ہو گئی؛ بعد میں دوبارہ کوشش کریں۔");
-                if (status == 400 || status == 403) throw new Exception("اے پی آئی کی یا گوگل کی اجازت درست نہیں۔");
-                throw new Exception("AI سروس نے جواب نہیں دیا (HTTP " + status + ")");
+                if (status == 429) throw new Exception("GEMINI_QUOTA: Google Gemini ki free/API quota ya billing limit poori ho gayi hai. Google AI Studio mein Usage aur Billing check karein. " + responseText.substring(0, Math.min(300, responseText.length())));
+                if (status == 400 || status == 403) throw new Exception("GEMINI_KEY: API key, project permission, ya billing configuration check karein. " + responseText.substring(0, Math.min(220, responseText.length())));
+                throw new Exception("GEMINI_HTTP_" + status + ": AI service error. " + responseText.substring(0, Math.min(220, responseText.length())));
             }
 
             JSONObject response = new JSONObject(responseText);
