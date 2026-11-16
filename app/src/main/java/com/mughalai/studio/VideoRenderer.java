@@ -428,6 +428,9 @@ public final class VideoRenderer {
         // Story-specific props and characters.
         boolean appleStory = s.contains("سیب") || s.contains("سیبوں") || s.contains("apple");
         boolean rabbitStory = s.contains("خرگوش") || s.contains("rabbit") || appleStory;
+        boolean turtleStory = s.contains("کچھوا") || s.contains("کچوا") || s.contains("turtle") || s.contains("tortoise");
+        boolean raceAction = s.contains("دوڑ") || s.contains("ریس") || s.contains("race") || s.contains("running");
+        boolean clapAction = s.contains("تالیاں") || s.contains("تالی") || s.contains("clap") || s.contains("applaud") || s.contains("cheer");
         boolean pigeonStory = s.contains("کبوتر") || s.contains("pigeon");
         boolean sparrowStory = s.contains("چڑیا") || s.contains("sparrow");
         boolean birdStory = pigeonStory || sparrowStory || s.contains("پرند") || s.contains("bird");
@@ -460,6 +463,54 @@ public final class VideoRenderer {
         }
         if (potatoStory || tomatoStory) {
             // Vegetable characters are drawn above instead of the generic figure.
+        } else if (rabbitStory && turtleStory) {
+            // Keep both race participants visible and animate them moving along the track.
+            float progress = raceAction ? (frame % 240) * 1.25f : 0f;
+            float rx = 350 + progress;
+            float tx = 720 + (float)Math.sin(frame * 0.04f) * 18;
+            float bob = (float)Math.abs(Math.sin(frame * 0.22f)) * 9f;
+            p.setColor(Color.rgb(238,232,220));
+            canvas.drawOval(rx-48,390-bob,rx+48,480-bob,p);
+            canvas.drawCircle(rx,355-bob,43,p);
+            canvas.drawOval(rx-31,265-bob,rx-9,330-bob,p);
+            canvas.drawOval(rx+9,265-bob,rx+31,330-bob,p);
+            p.setColor(Color.BLACK);
+            canvas.drawCircle(rx-14,350-bob,5,p);
+            canvas.drawCircle(rx+14,350-bob,5,p);
+            p.setColor(Color.rgb(70,125,65));
+            canvas.drawOval(tx-65,390,tx+65,465,p);
+            canvas.drawCircle(tx+42,385,28,p);
+            p.setColor(Color.rgb(105,145,65));
+            canvas.drawOval(tx-35,365,tx+35,435,p);
+            p.setColor(Color.rgb(35,45,25));
+            canvas.drawCircle(tx+50,380,4,p);
+            p.setColor(Color.rgb(220,185,90));
+            for(int i=0;i<5;i++) canvas.drawCircle(tx-45+i*22,400,10,p);
+            // Race track lanes.
+            p.setColor(Color.WHITE);
+            p.setStrokeWidth(5);
+            canvas.drawLine(80,500,1190,500,p);
+            canvas.drawLine(80,530,1190,530,p);
+            p.setStrokeWidth(1);
+            if (clapAction) {
+                // Spectators on both sides visibly clap with alternating arm movement.
+                for(int i=0;i<7;i++) {
+                    float cx=125+i*165;
+                    float cy=205+(i%2)*18;
+                    p.setColor(Color.rgb(225,175,135));
+                    canvas.drawCircle(cx,cy,19,p);
+                    p.setColor(new int[]{Color.rgb(45,95,175),Color.rgb(175,65,75),Color.rgb(65,135,85)}[i%3]);
+                    canvas.drawRect(cx-17,cy+20,cx+17,cy+72,p);
+                    float clap=(float)Math.sin(frame*0.65f+i)*10f;
+                    p.setColor(Color.rgb(225,175,135));
+                    p.setStrokeWidth(8);
+                    canvas.drawLine(cx-12,cy+35,cx-27,cy+55+clap,p);
+                    canvas.drawLine(cx+12,cy+35,cx+27,cy+55-clap,p);
+                    canvas.drawCircle(cx-27,cy+55+clap,7,p);
+                    canvas.drawCircle(cx+27,cy+55-clap,7,p);
+                    p.setStrokeWidth(1);
+                }
+            }
         } else if (rabbitStory) {
             float x = 560 + (float)Math.sin(frame * 0.035) * 28;
             float bob = (float)Math.sin(frame * 0.18) * 5;
