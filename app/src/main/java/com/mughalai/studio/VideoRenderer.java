@@ -62,7 +62,7 @@ public final class VideoRenderer {
         int trackIndex = -1;
 
         try {
-            if (useReal3D) glVegetables = new GLVegetableRenderer();
+            // All scene visuals are now rendered by SceneGraphRenderer.
             MediaFormat format = MediaFormat.createVideoFormat(
                     MediaFormat.MIMETYPE_VIDEO_AVC,
                     WIDTH, HEIGHT);
@@ -120,18 +120,8 @@ public final class VideoRenderer {
                 Canvas canvas = surface.lockCanvas(null);
 
                 try {
-                    drawScene(canvas,
-                            scenes[sceneIndex],
-                            frame, english);
-                    if (glVegetables != null) {
-                        Bitmap threeDFrame = glVegetables.render(frame);
-                        try {
-                            Paint overlay = new Paint(Paint.FILTER_BITMAP_FLAG);
-                            canvas.drawBitmap(threeDFrame, 0f, 0f, overlay);
-                        } finally {
-                            threeDFrame.recycle();
-                        }
-                    }
+                    SceneGraphRenderer.draw(canvas, scenes[sceneIndex], frame, english);
+                    
                 } finally {
                     surface.unlockCanvasAndPost(canvas);
                 }
@@ -237,10 +227,7 @@ public final class VideoRenderer {
 
         } finally {
 
-            if (glVegetables != null) {
-                try { glVegetables.close(); }
-                catch (Exception ignored) { }
-            }
+            
             if (encoder != null) {
                 try { encoder.stop(); }
                 catch (Exception ignored) { }
