@@ -213,6 +213,11 @@ public class MainActivity extends Activity {
         final boolean english =
                 language.getSelectedItemPosition() == 1;
         final String geminiKey = apiKey.getText().toString().trim();
+        if (geminiKey.isEmpty()) {
+            apiKey.setError("Premium 3D cartoon ke liye Gemini API key zaroori hai");
+            status.setText("3D movie-style scenes banane ke liye apni Gemini API key enter karein.");
+            return;
+        }
         getSharedPreferences("mughal_settings",MODE_PRIVATE).edit()
                 .putString("gemini_api_key",geminiKey).apply();
 
@@ -236,14 +241,21 @@ public class MainActivity extends Activity {
                         geminiKey.isEmpty()
                                 ? "آف لائن مناظر ترتیب دیے جا رہے ہیں..."
                                 : "Gemini AI کہانی کے کردار اور مناظر بنا رہی ہے..."));
-                String sceneScript = geminiKey.isEmpty()
-                        ? OfflineStoryPlanner.createOfflineSceneScript(text)
-                        : GeminiStoryPlanner.createSceneScript(text,geminiKey);
-                runOnUiThread(() -> status.setText("مناظر تیار؛ کارٹون ویڈیو بن رہی ہے..."));
-                VideoRenderer.render(sceneScript,target,minutes,english,
-                        (frame,total) -> runOnUiThread(() ->
-                                status.setText("Rendering video: " +
-                                        (frame * 100 / total) + "%")));
+                String sceneScript = GeminiStoryPlanner.createSceneScript(text,geminiKey);
+                runOnUiThread(() -> status.setText("AI ab har scene ki cute 3D movie-style image bana rahi hai..."));
+                File[] sceneImages = GeminiImageGenerator.generateSceneImages(
+                        sceneScript, geminiKey, folder, (current,total) ->
+                                runOnUiThread(() -> status.setText(
+                                        "Creating 3D cartoon scene " + current + " / " + total)));
+                runOnUiThread(() -> status.setText("3D scenes ready! Cinematic cartoon video render ho rahi hai..."));
+                try {
+                    VideoRenderer.render(sceneScript,target,minutes,english,
+                            (frame,total) -> runOnUiThread(() ->
+                                    status.setText("Rendering 3D cartoon: " +
+                                            (frame * 100 / total) + "%")), sceneImages);
+                } finally {
+                    for (File image : sceneImages) if (image != null && image.exists()) image.delete();
+                }
 
                 File voice = new File(folder,
                         "voice_" + System.currentTimeMillis() + ".wav");
