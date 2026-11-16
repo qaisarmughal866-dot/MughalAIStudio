@@ -125,7 +125,7 @@ public class MainActivity extends Activity {
         root.addView(apiKey,new LinearLayout.LayoutParams(-1,dp(54)));
 
         TextView apiNote = new TextView(this);
-        apiNote.setText("API key کے ساتھ AI کہانی کو الگ الگ مناظر میں تقسیم کرے گی۔ خالی چھوڑنے پر آف لائن موڈ چلے گا۔");
+        apiNote.setText("Premium 3D cartoon: Gemini API key لازمی ہے۔ AI ہر scene کی نئی 3D movie-style تصویر بنائے گی اور کردار ایک جیسے رکھے گی۔");
         apiNote.setTextColor(Color.LTGRAY);
         apiNote.setTextSize(12);
         root.addView(apiNote);
@@ -149,7 +149,7 @@ public class MainActivity extends Activity {
         note.setTextColor(Color.LTGRAY);
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
-        note.setText("مفت آف لائن 2.5D کارٹون اینیمیشن، فون کی آواز اور سب ٹائٹلز۔ حقیقی جنریٹو 3D ویڈیو اس ورژن میں شامل نہیں۔ کوئی ادائیگی یا روزانہ کریڈٹ حد نہیں۔");
+        note.setText("AI-generated 3D cartoon scenes, cinematic camera motion, Urdu voiceover and subtitles. Image generation may use your Google AI Studio quota.");
         root.addView(note);
 
         setContentView(scroll);
