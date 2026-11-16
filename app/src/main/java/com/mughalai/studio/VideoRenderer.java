@@ -253,7 +253,7 @@ public final class VideoRenderer {
         boolean night = s.contains("رات") || s.contains("چاند") || s.contains("night") || s.contains("moon");
         boolean sea = s.contains("سمندر") || s.contains("دریا") || s.contains("کشتی") || s.contains("sea") || s.contains("ocean");
         boolean desert = s.contains("صحرا") || s.contains("ریگ") || s.contains("desert");
-        boolean forest = s.contains("جنگل") || s.contains("درخت") || s.contains("forest") || s.contains("tree");
+        boolean forest = s.contains("جنگل") || s.contains("درخت") || s.contains("سیب") || s.contains("apple") || s.contains("forest") || s.contains("tree");
 
         canvas.drawColor(night ? Color.rgb(18, 27, 65) :
                 sea ? Color.rgb(105, 190, 220) :
