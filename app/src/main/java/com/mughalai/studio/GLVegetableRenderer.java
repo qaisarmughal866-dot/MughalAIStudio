@@ -98,33 +98,47 @@ final class GLVegetableRenderer {
         GLES20.glViewport(0,0,W,H); GLES20.glEnable(GLES20.GL_DEPTH_TEST);
         GLES20.glClearColor(0f,0f,0f,0f); GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT|GLES20.GL_DEPTH_BUFFER_BIT);
         GLES20.glUseProgram(program); GLES20.glUniform3f(lightLoc,-0.4f,0.8f,1f);
-        float t=frame*0.055f, bob=(float)Math.sin(t)*0.16f, step=(float)Math.sin(t*1.35f)*0.20f;
+        float t=frame*0.055f, bob=(float)Math.sin(t*1.7f)*0.10f;
         float talk=(float)(0.5+0.5*Math.sin(t*7.0));
         float greet=(float)Math.sin(t*1.8f);
-        // Potato: sculpted ellipsoid body, tiny eyes, nose, smile, arms and feet.
-        sphere(-1.45f+step*0.30f,bob,0,0.78f,1.02f,0.62f,0.70f,0.43f,0.19f);
+        float sway=(float)Math.sin(t*0.85f)*0.10f;
+        // 3D market set: rounded awning, posts, counter, baskets, trees and produce.
+        sphere(0f,-2.25f,-0.95f,5.2f,0.22f,1.1f,0.30f,0.48f,0.25f);
+        sphere(0f,1.95f,-1.15f,2.65f,0.22f,0.55f,0.88f,0.48f,0.12f);
+        sphere(-2.25f,1.50f,-1.05f,0.12f,1.45f,0.14f,0.48f,0.25f,0.12f);
+        sphere(2.25f,1.50f,-1.05f,0.12f,1.45f,0.14f,0.48f,0.25f,0.12f);
+        sphere(0f,0.78f,-1.0f,2.25f,0.12f,0.48f,0.48f,0.25f,0.12f);
+        sphere(-2.85f,-0.35f,-1.3f,0.52f,0.58f,0.42f,0.28f,0.48f,0.20f);
+        sphere(2.85f,-0.35f,-1.3f,0.52f,0.58f,0.42f,0.28f,0.48f,0.20f);
+        sphere(-2.85f,0.25f,-1.3f,0.38f,0.38f,0.38f,0.16f,0.42f,0.16f);
+        sphere(2.85f,0.25f,-1.3f,0.38f,0.38f,0.38f,0.16f,0.42f,0.16f);
+        sphere(-1.95f,-1.45f,-0.8f,0.30f,0.20f,0.22f,0.92f,0.18f,0.10f);
+        sphere(-1.48f,-1.42f,-0.8f,0.27f,0.18f,0.20f,0.95f,0.72f,0.12f);
+        sphere(1.90f,-1.43f,-0.8f,0.28f,0.18f,0.20f,0.95f,0.25f,0.12f);
+        // Potato: rounded 3D body, expressive face and conversational gestures.
+        sphere(-1.45f+sway,bob,0,0.78f,1.02f,0.62f,0.70f,0.43f,0.19f);
         sphere(-1.72f,0.25f,0.57f,0.09f,0.13f,0.06f,1f,1f,1f);
         sphere(-1.18f,0.25f,0.57f,0.09f,0.13f,0.06f,1f,1f,1f);
         sphere(-1.70f,0.25f,0.63f,0.04f,0.07f,0.035f,0.08f,0.05f,0.03f);
         sphere(-1.16f,0.25f,0.63f,0.04f,0.07f,0.035f,0.08f,0.05f,0.03f);
-        sphere(-1.45f+step*0.30f,-0.08f,0.62f,0.16f,0.035f+talk*0.12f,0.04f,0.22f,0.035f,0.025f);
-        sphere(-2.18f,-0.05f+greet*0.22f,0,0.13f,0.48f,0.14f,0.48f,0.27f,0.12f);
-        sphere(-0.72f,-0.05f-greet*0.18f,0,0.13f,0.48f,0.14f,0.48f,0.27f,0.12f);
-        sphere(-1.70f,-1.05f+step,0,0.16f,0.42f,0.17f,0.32f,0.19f,0.09f);
-        sphere(-1.20f,-1.05f-step,0,0.16f,0.42f,0.17f,0.32f,0.19f,0.09f);
+        sphere(-1.45f+sway,-0.08f,0.62f,0.16f,0.035f+talk*0.12f,0.04f,0.22f,0.035f,0.025f);
+        sphere(-2.18f,-0.05f+greet*0.32f,0,0.13f,0.48f,0.14f,0.48f,0.27f,0.12f);
+        sphere(-0.72f,-0.05f+Math.max(0f,greet)*0.38f,0,0.13f,0.48f,0.14f,0.48f,0.27f,0.12f);
+        sphere(-1.70f,-1.05f,0,0.16f,0.42f,0.17f,0.32f,0.19f,0.09f);
+        sphere(-1.20f,-1.05f,0,0.16f,0.42f,0.17f,0.32f,0.19f,0.09f);
         // Tomato: round, slightly lobed body, green calyx and stem.
-        sphere(1.35f-step*0.30f,-bob,0,0.91f,0.86f,0.72f,0.88f,0.12f,0.12f);
+        sphere(1.35f-sway,-bob,0,0.91f,0.86f,0.72f,0.88f,0.12f,0.12f);
         sphere(1.12f,0.23f,0.66f,0.09f,0.13f,0.06f,1f,1f,1f);
         sphere(1.61f,0.23f,0.66f,0.09f,0.13f,0.06f,1f,1f,1f);
         sphere(1.14f,0.23f,0.72f,0.04f,0.07f,0.035f,0.05f,0.03f,0.02f);
         sphere(1.63f,0.23f,0.72f,0.04f,0.07f,0.035f,0.05f,0.03f,0.02f);
-        sphere(1.37f-step*0.30f,-0.10f,0.75f,0.16f,0.035f+talk*0.12f,0.04f,0.22f,0.025f,0.02f);
+        sphere(1.37f-sway,-0.10f,0.75f,0.16f,0.035f+talk*0.12f,0.04f,0.22f,0.025f,0.02f);
         sphere(1.35f,0.88f,0,0.16f,0.27f,0.15f,0.12f,0.43f,0.12f);
         for(int i=0;i<5;i++){ double a=i*Math.PI*2/5; sphere(1.35f+(float)Math.cos(a)*0.25f,0.84f+(float)Math.sin(a)*0.13f,0.08f,0.23f,0.07f,0.12f,0.16f,0.55f,0.13f); }
-        sphere(0.62f,-0.05f-greet*0.18f,0,0.13f,0.45f,0.14f,0.18f,0.42f,0.12f);
-        sphere(2.08f,-0.05f+greet*0.22f,0,0.13f,0.45f,0.14f,0.18f,0.42f,0.12f);
-        sphere(1.08f,-0.92f-step,0,0.15f,0.4f,0.16f,0.12f,0.36f,0.10f);
-        sphere(1.62f,-0.92f+step,0,0.15f,0.4f,0.16f,0.12f,0.36f,0.10f);
+        sphere(0.62f,-0.05f+Math.max(0f,-greet)*0.38f,0,0.13f,0.45f,0.14f,0.18f,0.42f,0.12f);
+        sphere(2.08f,-0.05f+greet*0.32f,0,0.13f,0.45f,0.14f,0.18f,0.42f,0.12f);
+        sphere(1.08f,-0.92f,0,0.15f,0.4f,0.16f,0.12f,0.36f,0.10f);
+        sphere(1.62f,-0.92f,0,0.15f,0.4f,0.16f,0.12f,0.36f,0.10f);
         // A small 3D fruit stand and floating produce anchor the conversation in a market scene.
         sphere(-0.05f,-1.62f,-0.65f,1.55f,0.12f,0.34f,0.38f,0.20f,0.10f);
         sphere(-0.72f,-1.35f,-0.55f,0.20f,0.20f,0.20f,0.95f,0.16f,0.10f);
