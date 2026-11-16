@@ -368,7 +368,9 @@ public final class VideoRenderer {
             canvas.drawCircle(x,y,48,p);
             canvas.drawCircle(x+36,y-48,30,p);
             p.setColor(Color.rgb(245, 130, 35));
-            canvas.drawLine(x+62,y-48,x+91,y-38,p);\n            canvas.drawLine(x+91,y-38,x+62,y-27,p);\n            canvas.drawLine(x+62,y-27,x+62,y-48,p);
+            canvas.drawLine(x+62,y-48,x+91,y-38,p);
+            canvas.drawLine(x+91,y-38,x+62,y-27,p);
+            canvas.drawLine(x+62,y-27,x+62,y-48,p);
             p.setColor(Color.WHITE);
             canvas.drawCircle(x+45,y-55,9,p);
             p.setColor(Color.BLACK);
