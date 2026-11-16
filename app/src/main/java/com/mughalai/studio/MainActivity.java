@@ -104,7 +104,7 @@ public class MainActivity extends Activity {
         language = addSpinner(root,"Caption Language",
                 new String[]{"اردو","English"});
         duration = addSpinner(root,"Video Duration",
-                new String[]{"2 minutes","3 minutes","4 minutes","8 minutes"});
+                new String[]{"2 minutes","4 minutes","6 minutes"});
 
         TextView make = addButton(root,
                 "CREATE 720p CARTOON MP4",gold,dark);
@@ -180,7 +180,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        final int minutes = duration.getSelectedItemPosition() + 2;
+        final int minutes = Integer.parseInt(duration.getSelectedItem().toString().split(" ")[0]);
         final boolean english =
                 language.getSelectedItemPosition() == 1;
 
