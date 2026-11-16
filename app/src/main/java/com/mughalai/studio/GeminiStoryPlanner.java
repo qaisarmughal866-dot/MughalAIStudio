@@ -80,7 +80,7 @@ public final class GeminiStoryPlanner {
             for (int i = 0; i < scenes.length(); i++) {
                 String scene = scenes.getString(i).trim();
                 if (!scene.isEmpty()) {
-                    if (script.length() > 0) script.append("\\n\\n");
+                    if (script.length() > 0) script.append("\n\n");
                     script.append(scene);
                 }
             }
