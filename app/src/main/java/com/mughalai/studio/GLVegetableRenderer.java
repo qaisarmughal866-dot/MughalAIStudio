@@ -124,11 +124,19 @@ final class GLVegetableRenderer {
         sphere(1.08f,-0.92f-step,0,0.15f,0.4f,0.16f,0.12f,0.36f,0.10f);
         sphere(1.62f,-0.92f+step,0,0.15f,0.4f,0.16f,0.12f,0.36f,0.10f);
         ByteBuffer buf=ByteBuffer.allocateDirect(W*H*4).order(ByteOrder.nativeOrder());
+        GLES20.glFinish();
         GLES20.glReadPixels(0,0,W,H,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE,buf);
         buf.rewind();
-        Bitmap raw=Bitmap.createBitmap(W,H,Bitmap.Config.ARGB_8888); raw.copyPixelsFromBuffer(buf);
-        android.graphics.Matrix m=new android.graphics.Matrix(); m.setScale(1,-1);
-        Bitmap result=Bitmap.createBitmap(raw,0,0,W,H,m,true); raw.recycle();
+        int[] argb=new int[W*H];
+        for(int y=0;y<H;y++) {
+            int dstY=H-1-y;
+            for(int x=0;x<W;x++) {
+                int r=buf.get()&255, g=buf.get()&255, b=buf.get()&255, a=buf.get()&255;
+                argb[dstY*W+x]=(a<<24)|(r<<16)|(g<<8)|b;
+            }
+        }
+        Bitmap result=Bitmap.createBitmap(W,H,Bitmap.Config.ARGB_8888);
+        result.setPixels(argb,0,W,0,0,W,H);
         return result;
     }
     void close(){
