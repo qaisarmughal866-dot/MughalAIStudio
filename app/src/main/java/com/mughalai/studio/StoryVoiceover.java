@@ -7,6 +7,7 @@ import android.media.MediaFormat;
 import android.media.MediaMuxer;
 
 import java.io.File;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
 public final class StoryVoiceover {
@@ -24,103 +25,127 @@ public final class StoryVoiceover {
         }
     }
 
+    private static int readIntLE(RandomAccessFile f) throws Exception {
+        int a=f.read(), b=f.read(), c=f.read(), d=f.read();
+        if ((a|b|c|d)<0) throw new Exception("Invalid WAV header");
+        return a | (b<<8) | (c<<16) | (d<<24);
+    }
+
+    private static int readShortLE(RandomAccessFile f) throws Exception {
+        int a=f.read(), b=f.read();
+        if ((a|b)<0) throw new Exception("Invalid WAV header");
+        return a | (b<<8);
+    }
+
+    private static String readFourCC(RandomAccessFile f) throws Exception {
+        byte[] b=new byte[4];
+        f.readFully(b);
+        return new String(b,"US-ASCII");
+    }
+
     private static void encodeWavToAac(File wav, File audioMp4)
             throws Exception {
-        MediaExtractor extractor = new MediaExtractor();
-        MediaCodec encoder = null;
-        MediaMuxer muxer = null;
-        boolean muxerStarted = false;
-        int audioTrack = -1;
+        RandomAccessFile in=new RandomAccessFile(wav,"r");
+        MediaCodec encoder=null;
+        MediaMuxer muxer=null;
+        boolean muxerStarted=false;
+        int audioTrack=-1;
         try {
-            extractor.setDataSource(wav.getAbsolutePath());
-            int sourceTrack = -1;
-            MediaFormat sourceFormat = null;
-            for (int i = 0; i < extractor.getTrackCount(); i++) {
-                MediaFormat f = extractor.getTrackFormat(i);
-                String mime = f.getString(MediaFormat.KEY_MIME);
-                if (mime != null && mime.startsWith("audio/")) {
-                    sourceTrack = i;
-                    sourceFormat = f;
-                    break;
+            if (!"RIFF".equals(readFourCC(in))) throw new Exception("Voice file is not WAV");
+            readIntLE(in);
+            if (!"WAVE".equals(readFourCC(in))) throw new Exception("Invalid WAV format");
+            int channels=0, sampleRate=0, bits=0, audioFormat=0;
+            long dataStart=-1, dataSize=0;
+            while (in.getFilePointer()+8<=in.length()) {
+                String chunk=readFourCC(in);
+                long size=Integer.toUnsignedLong(readIntLE(in));
+                long next=in.getFilePointer()+size+(size&1);
+                if ("fmt ".equals(chunk)) {
+                    audioFormat=readShortLE(in);
+                    channels=readShortLE(in);
+                    sampleRate=readIntLE(in);
+                    readIntLE(in);
+                    readShortLE(in);
+                    bits=readShortLE(in);
+                } else if ("data".equals(chunk)) {
+                    dataStart=in.getFilePointer();
+                    dataSize=size;
                 }
+                if (next>in.length()) break;
+                in.seek(next);
+                if (dataStart>=0 && channels>0) break;
             }
-            if (sourceTrack < 0) throw new Exception("Voice audio track unavailable");
-            extractor.selectTrack(sourceTrack);
-
-            int sampleRate = sourceFormat.containsKey(MediaFormat.KEY_SAMPLE_RATE)
-                    ? sourceFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE) : 22050;
-            int channels = sourceFormat.containsKey(MediaFormat.KEY_CHANNEL_COUNT)
-                    ? sourceFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT) : 1;
-
-            MediaFormat target = MediaFormat.createAudioFormat(
-                    MediaFormat.MIMETYPE_AUDIO_AAC, sampleRate, channels);
+            if (audioFormat!=1 || bits!=16 || channels<1 || channels>2
+                    || sampleRate<8000 || dataStart<0)
+                throw new Exception("Unsupported voice WAV encoding");
+            in.seek(dataStart);
+            MediaFormat target=MediaFormat.createAudioFormat(
+                    MediaFormat.MIMETYPE_AUDIO_AAC,sampleRate,channels);
             target.setInteger(MediaFormat.KEY_AAC_PROFILE,
                     MediaCodecInfo.CodecProfileLevel.AACObjectLC);
-            target.setInteger(MediaFormat.KEY_BIT_RATE, 64000);
-            target.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 16384);
-
-            encoder = MediaCodec.createEncoderByType(
-                    MediaFormat.MIMETYPE_AUDIO_AAC);
-            encoder.configure(target, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            target.setInteger(MediaFormat.KEY_BIT_RATE,64000);
+            target.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE,16384);
+            encoder=MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_AUDIO_AAC);
+            encoder.configure(target,null,null,MediaCodec.CONFIGURE_FLAG_ENCODE);
             encoder.start();
-            muxer = new MediaMuxer(audioMp4.getAbsolutePath(),
+            muxer=new MediaMuxer(audioMp4.getAbsolutePath(),
                     MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-
-            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-            boolean inputDone = false;
-            boolean outputDone = false;
-            long lastPts = 0;
-
+            MediaCodec.BufferInfo info=new MediaCodec.BufferInfo();
+            long bytesFed=0;
+            boolean inputDone=false, outputDone=false;
+            int frameBytes=channels*2;
             while (!outputDone) {
                 if (!inputDone) {
-                    int inputIndex = encoder.dequeueInputBuffer(10000);
-                    if (inputIndex >= 0) {
-                        ByteBuffer input = encoder.getInputBuffer(inputIndex);
-                        if (input == null) throw new Exception("AAC input unavailable");
-                        input.clear();
-                        int size = extractor.readSampleData(input, 0);
-                        if (size < 0) {
-                            encoder.queueInputBuffer(inputIndex, 0, 0,
-                                    Math.max(0, lastPts), MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                            inputDone = true;
+                    int ix=encoder.dequeueInputBuffer(10000);
+                    if (ix>=0) {
+                        ByteBuffer buffer=encoder.getInputBuffer(ix);
+                        if (buffer==null) throw new Exception("AAC input unavailable");
+                        buffer.clear();
+                        int count=(int)Math.min(buffer.remaining(),dataSize-bytesFed);
+                        count-=count%frameBytes;
+                        if (count>0) {
+                            byte[] pcm=new byte[count];
+                            in.readFully(pcm);
+                            buffer.put(pcm);
+                            long pts=(bytesFed/frameBytes)*1000000L/sampleRate;
+                            encoder.queueInputBuffer(ix,0,count,pts,0);
+                            bytesFed+=count;
                         } else {
-                            long pts = extractor.getSampleTime();
-                            if (pts < 0) pts = lastPts;
-                            lastPts = pts + 1;
-                            encoder.queueInputBuffer(inputIndex, 0, size, pts, 0);
-                            extractor.advance();
+                            long pts=(bytesFed/frameBytes)*1000000L/sampleRate;
+                            encoder.queueInputBuffer(ix,0,0,pts,
+                                    MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                            inputDone=true;
                         }
                     }
                 }
-
-                int outputIndex = encoder.dequeueOutputBuffer(info, 10000);
-                if (outputIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    audioTrack = muxer.addTrack(encoder.getOutputFormat());
+                int out=encoder.dequeueOutputBuffer(info,10000);
+                if (out==MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    audioTrack=muxer.addTrack(encoder.getOutputFormat());
                     muxer.start();
-                    muxerStarted = true;
-                } else if (outputIndex >= 0) {
-                    ByteBuffer data = encoder.getOutputBuffer(outputIndex);
-                    if (data != null && info.size > 0 && muxerStarted
-                            && (info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0) {
+                    muxerStarted=true;
+                } else if (out>=0) {
+                    ByteBuffer data=encoder.getOutputBuffer(out);
+                    if (data!=null && info.size>0 && muxerStarted
+                            && (info.flags&MediaCodec.BUFFER_FLAG_CODEC_CONFIG)==0) {
                         data.position(info.offset);
-                        data.limit(info.offset + info.size);
-                        muxer.writeSampleData(audioTrack, data, info);
+                        data.limit(info.offset+info.size);
+                        muxer.writeSampleData(audioTrack,data,info);
                     }
-                    outputDone = (info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
-                    encoder.releaseOutputBuffer(outputIndex, false);
+                    outputDone=(info.flags&MediaCodec.BUFFER_FLAG_END_OF_STREAM)!=0;
+                    encoder.releaseOutputBuffer(out,false);
                 }
             }
             if (!muxerStarted) throw new Exception("AAC audio was not created");
         } finally {
-            if (encoder != null) {
-                try { encoder.stop(); } catch (Exception ignored) { }
-                try { encoder.release(); } catch (Exception ignored) { }
+            if (encoder!=null) {
+                try { encoder.stop(); } catch(Exception ignored) { }
+                try { encoder.release(); } catch(Exception ignored) { }
             }
-            if (muxer != null) {
-                try { if (muxerStarted) muxer.stop(); } catch (Exception ignored) { }
-                try { muxer.release(); } catch (Exception ignored) { }
+            if (muxer!=null) {
+                try { if(muxerStarted) muxer.stop(); } catch(Exception ignored) { }
+                try { muxer.release(); } catch(Exception ignored) { }
             }
-            extractor.release();
+            in.close();
         }
     }
 
