@@ -25,3 +25,4 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
 
 # Rebuild APK for the latest main branch changes.
+# Rebuild retry requested on 2026-11-16.
