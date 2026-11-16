@@ -105,7 +105,7 @@ public class MainActivity extends Activity {
         root.addView(story,new LinearLayout.LayoutParams(-1,dp(145)));
 
         TextView apiLabel = new TextView(this);
-        apiLabel.setText("Gemini AI API Key (optional)");
+        apiLabel.setText("Google AI Studio API Key (Veo access required)");
         apiLabel.setTextColor(gold);
         apiLabel.setTextSize(15);
         apiLabel.setPadding(0,dp(16),0,dp(5));
@@ -125,18 +125,18 @@ public class MainActivity extends Activity {
         root.addView(apiKey,new LinearLayout.LayoutParams(-1,dp(54)));
 
         TextView apiNote = new TextView(this);
-        apiNote.setText("Premium 3D cartoon: Gemini API key لازمی ہے۔ AI ہر scene کی نئی 3D movie-style تصویر بنائے گی اور کردار ایک جیسے رکھے گی۔");
+        apiNote.setText("اصل حرکت والے 3D کارٹون کے لیے Veo video model کا access اور billing/credits ضروری ہیں۔ صرف Gemini image quota کافی نہیں۔");
         apiNote.setTextColor(Color.LTGRAY);
         apiNote.setTextSize(12);
         root.addView(apiNote);
 
         language = addSpinner(root,"Caption Language",
                 new String[]{"اردو","English"});
-        duration = addSpinner(root,"Video Duration",
-                new String[]{"2 minutes","4 minutes","6 minutes"});
+        duration = addSpinner(root,"Animated Clip Length",
+                new String[]{"8-second real animated clip"});
 
         TextView make = addButton(root,
-                "CREATE FREE CARTOON MP4",gold,dark);
+                "CREATE REAL ANIMATED CARTOON",gold,dark);
         make.setOnClickListener(v -> createVideo());
 
         status = new TextView(this);
@@ -149,7 +149,7 @@ public class MainActivity extends Activity {
         note.setTextColor(Color.LTGRAY);
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
-        note.setText("AI-generated 3D cartoon scenes, cinematic camera motion, Urdu voiceover and subtitles. Image generation may use your Google AI Studio quota.");
+        note.setText("Veo-generated moving 3D cartoon clip with native sound/audio. First version creates one short 8-second clip; longer stories need multiple clips.");
         root.addView(note);
 
         setContentView(scroll);
@@ -203,90 +203,41 @@ public class MainActivity extends Activity {
     }
 
     private void createVideo() {
-        String text = story.getText().toString().trim();
+        final String text = story.getText().toString().trim();
         if (text.isEmpty()) {
             story.setError("Please write your story");
             return;
         }
-
-        final int minutes = Integer.parseInt(duration.getSelectedItem().toString().split(" ")[0]);
-        final boolean english =
-                language.getSelectedItemPosition() == 1;
+        final boolean english = language.getSelectedItemPosition() == 1;
         final String geminiKey = apiKey.getText().toString().trim();
         if (geminiKey.isEmpty()) {
-            apiKey.setError("Premium 3D cartoon ke liye Gemini API key zaroori hai");
-            status.setText("3D movie-style scenes banane ke liye apni Gemini API key enter karein.");
+            apiKey.setError("Google AI Studio API key zaroori hai");
+            status.setText("Veo se asli animated cartoon banane ke liye API key enter karein.");
             return;
         }
         getSharedPreferences("mughal_settings",MODE_PRIVATE).edit()
                 .putString("gemini_api_key",geminiKey).apply();
 
         createButton.setEnabled(false);
-        status.setText("Preparing video...");
-
+        status.setText("Veo AI se animated cartoon tayyar ho raha hai...");
         worker.execute(() -> {
             File output = null;
             try {
-                File folder = new File(
-                        getExternalFilesDir("Movies"),"MughalAIStudio");
-                if (!folder.exists() && !folder.mkdirs()) {
+                File folder = new File(getExternalFilesDir("Movies"),"MughalAIStudio");
+                if (!folder.exists() && !folder.mkdirs())
                     throw new Exception("Cannot create video folder");
-                }
-
-                output = new File(folder,
-                        "Cartoon_" + System.currentTimeMillis() + ".mp4");
+                output = new File(folder,"Animated_Cartoon_" + System.currentTimeMillis() + ".mp4");
                 final File target = output;
-
-                runOnUiThread(() -> status.setText(
-                        geminiKey.isEmpty()
-                                ? "آف لائن مناظر ترتیب دیے جا رہے ہیں..."
-                                : "Gemini AI کہانی کے کردار اور مناظر بنا رہی ہے..."));
-                String sceneScript = GeminiStoryPlanner.createSceneScript(text,geminiKey);
-                runOnUiThread(() -> status.setText("AI ab har scene ki cute 3D movie-style image bana rahi hai..."));
-                File[] sceneImages = GeminiImageGenerator.generateSceneImages(
-                        sceneScript, geminiKey, folder, (current,total) ->
-                                runOnUiThread(() -> status.setText(
-                                        "Creating 3D cartoon scene " + current + " / " + total)));
-                runOnUiThread(() -> status.setText("3D scenes ready! Cinematic cartoon video render ho rahi hai..."));
-                try {
-                    VideoRenderer.render(sceneScript,target,minutes,english,
-                            (frame,total) -> runOnUiThread(() ->
-                                    status.setText("Rendering 3D cartoon: " +
-                                            (frame * 100 / total) + "%")), sceneImages);
-                } finally {
-                    for (File image : sceneImages) if (image != null && image.exists()) image.delete();
-                }
-
-                File voice = new File(folder,
-                        "voice_" + System.currentTimeMillis() + ".wav");
-                File silentVideo = new File(folder,
-                        "silent_" + System.currentTimeMillis() + ".mp4");
-                File combinedVideo = new File(folder,
-                        "combined_" + System.currentTimeMillis() + ".mp4");
-                try {
-                    runOnUiThread(() -> status.setText("Creating story voice..."));
-                    SpeechSynthesizer.createVoiceFile(
-                            MainActivity.this, text, english, voice);
-                    runOnUiThread(() -> status.setText("Adding voice to video..."));
-                    copyFile(target, silentVideo);
-                    StoryVoiceover.muxWavWithVideo(silentVideo, voice, combinedVideo);
-                    if (!combinedVideo.renameTo(target))
-                        throw new Exception("Could not finalize video with voice");
-                } finally {
-                    if (voice.exists()) voice.delete();
-                    if (silentVideo.exists()) silentVideo.delete();
-                    if (combinedVideo.exists()) combinedVideo.delete();
-                }
-
+                VeoVideoGenerator.generate(text,geminiKey,english,target,
+                        message -> runOnUiThread(() -> status.setText(message)));
                 String message = saveToGallery(target);
                 runOnUiThread(() -> {
-                    status.setText("ویڈیو بن گئی!\n" + message);
+                    status.setText("اصل اینیمیٹڈ کارٹون ویڈیو بن گئی!\\n" + message);
                     createButton.setEnabled(true);
                 });
             } catch (Exception e) {
                 if (output != null && output.exists()) output.delete();
-                String error = e.getMessage() == null ?
-                        "Video creation failed" : e.getMessage();
+                String error = e.getMessage() == null ? "Video creation failed" : e.getMessage();
                 runOnUiThread(() -> {
                     status.setText("Error: " + error);
                     createButton.setEnabled(true);
