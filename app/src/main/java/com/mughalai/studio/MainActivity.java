@@ -204,7 +204,7 @@ public class MainActivity extends Activity {
                 final File target = output;
 
                 runOnUiThread(() -> status.setText("کہانی کے مناظر ترتیب دیے جا رہے ہیں..."));
-                String sceneScript = GeminiStoryPlanner.createOfflineSceneScript(text);
+                String sceneScript = OfflineStoryPlanner.createOfflineSceneScript(text);
                 runOnUiThread(() -> status.setText("مناظر تیار؛ کارٹون ویڈیو بن رہی ہے..."));
                 VideoRenderer.render(sceneScript,target,minutes,english,
                         (frame,total) -> runOnUiThread(() ->
