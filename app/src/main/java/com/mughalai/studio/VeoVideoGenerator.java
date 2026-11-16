@@ -19,7 +19,7 @@ public final class VeoVideoGenerator {
 
     public interface Progress { void update(String message); }
 
-    public static File generate(String story, String apiKey, File output,
+    public static File generate(String story, String apiKey, boolean english, File output,
             Progress progress) throws Exception {
         String prompt = "Create an original high-quality 3D animated family cartoon movie clip. "
                 + "This must be real continuous animation, NOT a still image, slideshow, montage, or camera zoom over a picture. "
