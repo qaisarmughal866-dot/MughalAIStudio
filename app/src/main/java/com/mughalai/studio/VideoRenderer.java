@@ -431,6 +431,7 @@ public final class VideoRenderer {
         boolean pigeonStory = s.contains("کبوتر") || s.contains("pigeon");
         boolean sparrowStory = s.contains("چڑیا") || s.contains("sparrow");
         boolean birdStory = pigeonStory || sparrowStory || s.contains("پرند") || s.contains("bird");
+        boolean nestStory = s.contains("گھونسلا") || s.contains("گھونسلہ") || s.contains("گھونسلے") || s.contains("nest") || s.contains("nesting");
         boolean lionStory = s.contains("شیر") || s.contains("lion");
         boolean princessStory = s.contains("شہزادی") || s.contains("princess");
         if (potatoStory || tomatoStory) {
@@ -481,6 +482,23 @@ public final class VideoRenderer {
                 canvas.drawCircle(x+70, 445+bob, 22, p);
             }
         } else if (birdStory) {
+            // Nest-building scene: a branch and growing nest are drawn before the birds.
+            if (nestStory) {
+                p.setColor(Color.rgb(95, 65, 38));
+                p.setStrokeWidth(15);
+                canvas.drawLine(330, 435, 970, 435, p);
+                p.setStrokeWidth(1);
+                p.setColor(Color.rgb(115, 75, 42));
+                canvas.drawOval(555, 420, 755, 490, p);
+                int built = Math.min(12, 2 + (frame / 18) % 13);
+                p.setStrokeWidth(7);
+                for (int i = 0; i < built; i++) {
+                    float sx = 575 + (i * 29) % 160;
+                    float sy = 442 + (i * 13) % 28;
+                    canvas.drawLine(sx, sy, sx + 35, sy - 8 + (i % 3) * 8, p);
+                }
+                p.setStrokeWidth(1);
+            }
             // Draw each named bird as its own recognizable character.
             // When both names occur, show both together rather than replacing one.
             if (pigeonStory) {
@@ -519,6 +537,22 @@ public final class VideoRenderer {
                 canvas.drawLine(x-8,y+32,x-12,y+53,p);
                 canvas.drawLine(x+18,y+32,x+22,y+53,p);
                 p.setStrokeWidth(1);
+            }
+            if (nestStory) {
+                // Both birds actively help: wings flap and each carries a twig toward the nest.
+                float flap = (float)Math.sin(frame * 0.55f) * 18f;
+                p.setColor(Color.rgb(100, 75, 55));
+                p.setStrokeWidth(6);
+                canvas.drawLine(490, 335 + flap, 555, 390, p);
+                canvas.drawLine(865, 325 - flap, 800, 390, p);
+                p.setStrokeWidth(1);
+                p.setColor(Color.rgb(125, 82, 45));
+                canvas.drawLine(490, 335 + flap, 525, 327 + flap, p);
+                canvas.drawLine(865, 325 - flap, 830, 317 - flap, p);
+                p.setColor(Color.rgb(245, 215, 165));
+                canvas.drawCircle(650, 425, 13, p);
+                p.setColor(Color.rgb(120, 80, 45));
+                canvas.drawLine(642, 424, 658, 414, p);
             }
         } else {
             float x = 690 + (float)Math.sin(frame * 0.035) * 55;
