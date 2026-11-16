@@ -96,7 +96,7 @@ final class GLVegetableRenderer {
     Bitmap render(int frame) {
         EGL14.eglMakeCurrent(display,surface,surface,context);
         GLES20.glViewport(0,0,W,H); GLES20.glEnable(GLES20.GL_DEPTH_TEST);
-        GLES20.glClearColor(0.66f,0.79f,0.84f,1f); GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT|GLES20.GL_DEPTH_BUFFER_BIT);
+        GLES20.glClearColor(0f,0f,0f,0f); GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT|GLES20.GL_DEPTH_BUFFER_BIT);
         GLES20.glUseProgram(program); GLES20.glUniform3f(lightLoc,-0.4f,0.8f,1f);
         float t=frame*0.055f, bob=(float)Math.sin(t)*0.12f, step=(float)Math.sin(t*2)*0.16f;
         // Potato: sculpted ellipsoid body, tiny eyes, nose, smile, arms and feet.
@@ -127,7 +127,6 @@ final class GLVegetableRenderer {
         GLES20.glReadPixels(0,0,W,H,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE,buf);
         buf.rewind();
         Bitmap raw=Bitmap.createBitmap(W,H,Bitmap.Config.ARGB_8888); raw.copyPixelsFromBuffer(buf);
-        Bitmap flipped=Bitmap.createBitmap(raw,0,0,W,H,android.graphics.Matrix.IDENTITY,true);
         android.graphics.Matrix m=new android.graphics.Matrix(); m.setScale(1,-1);
         Bitmap result=Bitmap.createBitmap(raw,0,0,W,H,m,true); raw.recycle();
         return result;
