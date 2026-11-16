@@ -15,7 +15,7 @@ public final class GeminiStoryPlanner {
     public static String createSceneScript(String story, String apiKey) throws Exception {
         HttpURLConnection connection = null;
         try {
-            URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="
+            URL url = new URL("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key="
                     + java.net.URLEncoder.encode(apiKey, "UTF-8"));
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
@@ -57,8 +57,8 @@ public final class GeminiStoryPlanner {
             }
             String responseText = new String(bytes.toByteArray(), "UTF-8");
             if (status < 200 || status >= 300) {
-                if (status == 429) throw new Exception("Gemini کی مفت حد پوری ہو گئی؛ کچھ دیر بعد دوبارہ کوشش کریں۔");
-                if (status == 400 || status == 403) throw new Exception("API key یا Gemini مفت سروس کی اجازت درست نہیں۔");
+                if (status == 429) throw new Exception("گوگل کی استعمال کی حد پوری ہو گئی؛ بعد میں دوبارہ کوشش کریں۔");
+                if (status == 400 || status == 403) throw new Exception("اے پی آئی کی یا گوگل کی اجازت درست نہیں۔");
                 throw new Exception("AI سروس نے جواب نہیں دیا (HTTP " + status + ")");
             }
 
