@@ -245,7 +245,9 @@ public class MainActivity extends Activity {
                 }
 
                 String message = saveToGallery(target);
+                spendOneCredit();
                 runOnUiThread(() -> {
+                    refreshCreditsLabel();
                     status.setText("Video created!\n" + message);
                     createButton.setEnabled(true);
                 });
