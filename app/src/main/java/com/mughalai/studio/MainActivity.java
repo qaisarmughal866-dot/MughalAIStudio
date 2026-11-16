@@ -19,13 +19,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
     private EditText story;
     private Spinner duration, language;
-    private TextView status, createButton;
+    private TextView status, createButton, creditsView;
+    private static final int DAILY_FREE_CREDITS = 2;
     private final ExecutorService worker =
             Executors.newSingleThreadExecutor();
 
@@ -106,8 +110,16 @@ public class MainActivity extends Activity {
         duration = addSpinner(root,"Video Duration",
                 new String[]{"2 minutes","4 minutes","6 minutes"});
 
+        creditsView = new TextView(this);
+        creditsView.setTextColor(gold);
+        creditsView.setTextSize(15);
+        creditsView.setGravity(Gravity.CENTER);
+        creditsView.setPadding(0,dp(14),0,dp(8));
+        root.addView(creditsView);
+        refreshCreditsLabel();
+
         TextView make = addButton(root,
-                "CREATE 720p CARTOON MP4",gold,dark);
+                "CREATE FREE CARTOON MP4",gold,dark);
         make.setOnClickListener(v -> createVideo());
 
         status = new TextView(this);
@@ -120,7 +132,7 @@ public class MainActivity extends Activity {
         note.setTextColor(Color.LTGRAY);
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
-        note.setText("Offline 2D cartoon version. AI voice and real 3D animation are not included.");
+        note.setText("مفت آف لائن کارٹون ورژن۔ حقیقی AI تھری ڈی ویڈیو ابھی شامل نہیں؛ روزانہ مفت کریڈٹس اسی فون میں محفوظ ہیں۔");
         root.addView(note);
 
         setContentView(scroll);
@@ -177,6 +189,12 @@ public class MainActivity extends Activity {
         String text = story.getText().toString().trim();
         if (text.isEmpty()) {
             story.setError("Please write your story");
+            return;
+        }
+
+        if (getAvailableCredits() < 1) {
+            status.setText("آج کے مفت کریڈٹس ختم ہو گئے۔ نئے کریڈٹس اگلے دن خود مل جائیں گے۔");
+            refreshCreditsLabel();
             return;
         }
 
@@ -241,6 +259,33 @@ public class MainActivity extends Activity {
                 });
             }
         });
+    }
+
+    private int getAvailableCredits() {
+        android.content.SharedPreferences prefs =
+                getSharedPreferences("daily_free_credits", MODE_PRIVATE);
+        String today = new SimpleDateFormat("yyyyMMdd", Locale.US)
+                .format(new Date());
+        String savedDay = prefs.getString("day", "");
+        if (!today.equals(savedDay)) {
+            prefs.edit().putString("day", today)
+                    .putInt("credits", DAILY_FREE_CREDITS).apply();
+        }
+        return prefs.getInt("credits", DAILY_FREE_CREDITS);
+    }
+
+    private void spendOneCredit() {
+        android.content.SharedPreferences prefs =
+                getSharedPreferences("daily_free_credits", MODE_PRIVATE);
+        int remaining = Math.max(0, getAvailableCredits() - 1);
+        prefs.edit().putInt("credits", remaining).apply();
+    }
+
+    private void refreshCreditsLabel() {
+        if (creditsView == null) return;
+        creditsView.setText("روزانہ مفت کریڈٹس: " + getAvailableCredits()
+                + " / " + DAILY_FREE_CREDITS
+                + "\\nاگلے دن کریڈٹس خود دوبارہ مل جائیں گے");
     }
 
     private void copyFile(File source, File destination) throws Exception {
