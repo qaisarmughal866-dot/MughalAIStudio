@@ -1,6 +1,5 @@
 package com.mughalai.studio;
 
-import android.util.Base64;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -8,111 +7,74 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** Generates a real moving 3D cartoon clip with Gemini Omni Flash video generation. */
+/** Generates a short animated cartoon clip through fal.ai Kling 3.0 Turbo Standard. */
 public final class VeoVideoGenerator {
-    private static final String MODEL = "gemini-omni-1.1-flash";
-    private static final String ENDPOINT =
-            "https://generativelanguage.googleapis.com/v1beta/interactions";
+    private static final String MODEL = "fal-ai/kling-video/v3/turbo/standard/text-to-video";
+    private static final String SUBMIT_URL = "https://queue.fal.run/" + MODEL;
     private VeoVideoGenerator() {}
 
     public interface Progress { void update(String message); }
 
     public static File generate(String story, String apiKey, boolean english, File output,
             Progress progress) throws Exception {
+        if (apiKey == null || apiKey.trim().isEmpty())
+            throw new Exception("fal.ai API چابی درج کریں۔");
+
         String language = english ? "English" : "Urdu";
-        String prompt = "Create an original high-quality 3D animated family cartoon movie clip. "
-                + "This must be real continuous character animation, NOT a still image, slideshow, montage, "
-                + "or camera zoom over a picture. Show clearly moving cartoon characters with expressive faces, "
-                + "blinking, natural body movement, walking and gestures, fluid animation, cinematic lighting, "
-                + "and a colorful detailed 3D CGI environment. Keep character appearance consistent throughout. "
-                + "Use landscape 16:9 framing. Spoken dialogue, if any, must be in " + language + ". "
-                + "Include fitting synchronized sound effects and cheerful background music. "
-                + "No subtitles, no on-screen text, no logos. Story and action: " + story;
+        String prompt = "Create a polished, colorful 3D CGI family cartoon animation. "
+                + "Show clearly moving cartoon characters, expressive faces, blinking, "
+                + "natural body movement, walking and hand gestures, fluid continuous motion, "
+                + "cinematic lighting and a detailed storybook environment. Keep the same "
+                + "character designs throughout this short clip. This must be actual animation, "
+                + "not a still image or slideshow. Landscape 16:9. Add suitable natural audio "
+                + "and sound effects if supported. Any spoken words should be in " + language
+                + ". No subtitles, captions, logos or text on screen. Story: " + story;
 
+        if (prompt.length() > 2400) prompt = prompt.substring(0, 2400);
         JSONObject body = new JSONObject()
-                .put("model", MODEL)
-                .put("input", prompt)
-                .put("response_format", new JSONObject()
-                        .put("type", "video")
-                        .put("aspect_ratio", "16:9")
-                        .put("resolution", "720p")
-                        .put("delivery", "uri"));
+                .put("prompt", prompt)
+                .put("duration", "8")
+                .put("aspect_ratio", "16:9")
+                .put("enable_safety_checker", true);
 
-        if (progress != null) progress.update("Gemini Omni AI se asli 3D animated cartoon ban rahi hai...");
-        JSONObject response = requestJson(ENDPOINT, "POST", body.toString(), apiKey);
-        if (!"completed".equalsIgnoreCase(response.optString("status", "completed"))) {
-            String state = response.optString("status", "unknown");
-            throw new Exception("Video generation abhi complete nahi hui (status: " + state
-                    + "). Please thori dair baad dobara try karein.");
-        }
+        if (progress != null) progress.update("ویڈیو بنانے کی درخواست بھیجی جا رہی ہے...");
+        JSONObject submitted = requestJson(SUBMIT_URL, "POST", body.toString(), apiKey);
+        String statusUrl = submitted.optString("status_url", "");
+        String resultUrl = submitted.optString("response_url", "");
+        if (statusUrl.isEmpty() || resultUrl.isEmpty())
+            throw new Exception("fal.ai نے درخواست کی درست معلومات واپس نہیں دیں۔");
 
-        String videoUri = findVideoUri(response);
-        String videoData = findVideoData(response);
-        if (progress != null) progress.update("Animated cartoon video save ho rahi hai...");
-
-        if (!videoUri.isEmpty()) {
-            download(videoUri, apiKey, output);
-        } else if (!videoData.isEmpty()) {
-            byte[] bytes;
-            try {
-                bytes = Base64.decode(videoData, Base64.DEFAULT);
-            } catch (IllegalArgumentException e) {
-                throw new Exception("Gemini Omni ne invalid video data return ki.");
+        long deadline = System.currentTimeMillis() + 10L * 60L * 1000L;
+        boolean complete = false;
+        while (System.currentTimeMillis() < deadline) {
+            Thread.sleep(5000);
+            JSONObject state = requestJson(statusUrl, "GET", null, apiKey);
+            String status = state.optString("status", "");
+            if ("COMPLETED".equalsIgnoreCase(status)) {
+                String error = state.optString("error", "");
+                if (!error.isEmpty()) throw new Exception("ویڈیو نہیں بن سکی: " + error);
+                complete = true;
+                break;
             }
-            try (FileOutputStream out = new FileOutputStream(output)) {
-                out.write(bytes);
-                out.flush();
+            if (progress != null) {
+                String message = "ویڈیو تیار ہو رہی ہے، براہِ کرم انتظار کریں...";
+                progress.update(message);
             }
-        } else {
-            throw new Exception("Gemini Omni response mein video file nahi mili: "
-                    + response.toString().substring(0, Math.min(500, response.toString().length())));
         }
+        if (!complete) throw new Exception("ویڈیو بنانے میں زیادہ وقت لگ گیا۔ کچھ دیر بعد دوبارہ کوشش کریں۔");
+
+        if (progress != null) progress.update("ویڈیو موبائل میں محفوظ ہو رہی ہے...");
+        JSONObject result = requestJson(resultUrl, "GET", null, apiKey);
+        JSONObject video = result.optJSONObject("video");
+        String videoUrl = video == null ? "" : video.optString("url", "");
+        if (videoUrl.isEmpty()) throw new Exception("fal.ai کے جواب میں ویڈیو کا لنک موجود نہیں۔");
+        download(videoUrl, output);
 
         if (!output.exists() || output.length() < 10000)
-            throw new Exception("Downloaded video incomplete hai.");
+            throw new Exception("ویڈیو مکمل طور پر محفوظ نہیں ہوئی۔");
         return output;
-    }
-
-    private static String findVideoUri(JSONObject response) {
-        JSONArray steps = response.optJSONArray("steps");
-        if (steps == null) return "";
-        for (int i = 0; i < steps.length(); i++) {
-            JSONObject step = steps.optJSONObject(i);
-            if (step == null || !"model_output".equals(step.optString("type"))) continue;
-            JSONArray content = step.optJSONArray("content");
-            if (content == null) continue;
-            for (int j = 0; j < content.length(); j++) {
-                JSONObject item = content.optJSONObject(j);
-                if (item != null && "video".equals(item.optString("type"))) {
-                    String uri = item.optString("uri", "");
-                    if (!uri.isEmpty()) return uri;
-                }
-            }
-        }
-        return "";
-    }
-
-    private static String findVideoData(JSONObject response) {
-        JSONArray steps = response.optJSONArray("steps");
-        if (steps == null) return "";
-        for (int i = 0; i < steps.length(); i++) {
-            JSONObject step = steps.optJSONObject(i);
-            if (step == null || !"model_output".equals(step.optString("type"))) continue;
-            JSONArray content = step.optJSONArray("content");
-            if (content == null) continue;
-            for (int j = 0; j < content.length(); j++) {
-                JSONObject item = content.optJSONObject(j);
-                if (item != null && "video".equals(item.optString("type"))) {
-                    String data = item.optString("data", "");
-                    if (!data.isEmpty()) return data;
-                }
-            }
-        }
-        return "";
     }
 
     private static JSONObject requestJson(String address, String method,
@@ -122,8 +84,8 @@ public final class VeoVideoGenerator {
             c = (HttpURLConnection) new URL(address).openConnection();
             c.setRequestMethod(method);
             c.setConnectTimeout(30000);
-            c.setReadTimeout(600000);
-            c.setRequestProperty("x-goog-api-key", apiKey);
+            c.setReadTimeout(90000);
+            c.setRequestProperty("Authorization", "Key " + apiKey.trim());
             c.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             if (body != null) {
                 c.setDoOutput(true);
@@ -133,38 +95,30 @@ public final class VeoVideoGenerator {
             }
             int code = c.getResponseCode();
             InputStream stream = code >= 200 && code < 300 ? c.getInputStream() : c.getErrorStream();
-            String text = readText(stream);
+            String response = readText(stream);
             if (code < 200 || code >= 300) {
-                String detail = text.substring(0, Math.min(500, text.length()));
+                String detail = response.substring(0, Math.min(500, response.length()));
                 if (code == 401 || code == 403)
-                    throw new Exception("API_KEY_OR_ACCESS: Google ne is API key/project ko Gemini Omni video access nahi diya (HTTP "
-                            + code + "): " + detail);
-                if (code == 404)
-                    throw new Exception("MODEL_OR_API_NOT_FOUND: Gemini Omni video endpoint/model available nahi (HTTP 404): " + detail);
+                    throw new Exception("fal.ai نے API چابی قبول نہیں کی۔ چابی دوبارہ چیک کریں۔");
                 if (code == 429)
-                    throw new Exception("VIDEO_QUOTA: Google API quota/billing limit poori hai (HTTP 429): " + detail);
-                throw new Exception("Gemini video API HTTP " + code + ": " + detail);
+                    throw new Exception("fal.ai کی حد یا بیلنس ختم ہو گیا ہے۔ اپنے اکاؤنٹ کا بیلنس چیک کریں۔");
+                throw new Exception("fal.ai خرابی (HTTP " + code + "): " + detail);
             }
-            return new JSONObject(text);
+            return new JSONObject(response);
         } finally {
             if (c != null) c.disconnect();
         }
     }
 
-    private static void download(String uri, String apiKey, File output) throws Exception {
+    private static void download(String address, File output) throws Exception {
         HttpURLConnection c = null;
         try {
-            String address = uri;
             c = (HttpURLConnection) new URL(address).openConnection();
             c.setConnectTimeout(30000);
             c.setReadTimeout(180000);
-            c.setRequestProperty("x-goog-api-key", apiKey);
             int code = c.getResponseCode();
-            if (code < 200 || code >= 300) {
-                String error = readText(c.getErrorStream());
-                throw new Exception("Video download failed (HTTP " + code + "): "
-                        + error.substring(0, Math.min(300, error.length())));
-            }
+            if (code < 200 || code >= 300)
+                throw new Exception("ویڈیو فائل ڈاؤن لوڈ نہیں ہو سکی (HTTP " + code + ")۔");
             try (InputStream in = c.getInputStream(); FileOutputStream out = new FileOutputStream(output)) {
                 byte[] buffer = new byte[16384];
                 int n;
