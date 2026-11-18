@@ -191,12 +191,12 @@ final class GLVegetableRenderer {
             boolean fish = hasAny(whole,"مچھلی","مچھلیاں","fish");
             boolean run = hasAny(whole,"دوڑ","بھاگ","race","run","running");
             boolean fly = hasAny(whole,"اڑ","پرواز","fly","flying");
-            boolean talk = hasAny(whole,"کہا","بول","بات","کہتا","کہتی","said","speak","talk");
+            boolean isTalking = hasAny(whole,"کہا","بول","بات","کہتا","کہتی","said","speak","talk");
             boolean wave = hasAny(whole,"سلام","ہاتھ ہلایا","خوش آمدید","welcome","wave","waved");
             float gait = run ? 0.8f : 0.38f;
             if (human || (!lion && !rabbit && !bird && !dog && !snake && !fish)) {
-                drawHumanoid(actorX, -0.35f, phase, gait, talk, wave, 0.20f,0.43f,0.78f);
-                if (hasAny(whole,"دو","two","دوست","friends")) drawHumanoid(1.55f,-0.35f,phase+1.4f,gait,talk,false,0.72f,0.28f,0.22f);
+                drawHumanoid(actorX, -0.35f, phase, gait, isTalking, wave, 0.20f,0.43f,0.78f);
+                if (hasAny(whole,"دو","two","دوست","friends")) drawHumanoid(1.55f,-0.35f,phase+1.4f,gait,isTalking,false,0.72f,0.28f,0.22f);
             }
             if (lion) drawQuadruped(-0.25f,-0.55f,phase,gait,0.78f,0.46f,0.12f,true);
             if (rabbit) drawQuadruped(0.25f,-0.62f,phase,gait,0.83f,0.80f,0.70f,false);
