@@ -137,6 +137,17 @@ public final class VideoRenderer {
                     Bitmap frame3D = glVegetables.render(frame);
                     canvas.drawBitmap(frame3D, 0f, 0f, null);
                     frame3D.recycle();
+
+                    Paint captionPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    captionPaint.setColor(Color.argb(205, 0, 0, 0));
+                    canvas.drawRoundRect(35, 610, WIDTH - 35, 700, 18, 18, captionPaint);
+                    captionPaint.setColor(Color.WHITE);
+                    captionPaint.setTextSize(31f);
+                    captionPaint.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+                    captionPaint.setTextAlign(Paint.Align.CENTER);
+                    String caption = scenes[sceneIndex].trim();
+                    if (caption.length() > 58) caption = caption.substring(0, 55) + "...";
+                    canvas.drawText(caption, WIDTH / 2f, 666, captionPaint);
                 } finally {
                     surface.unlockCanvasAndPost(canvas);
                 }
