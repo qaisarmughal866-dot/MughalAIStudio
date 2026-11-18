@@ -59,16 +59,6 @@ public final class VideoRenderer {
         MediaMuxer muxer = null;
         Surface surface = null;
         GLVegetableRenderer glVegetables = null;
-        String lowerStory = story.toLowerCase();
-        boolean useReal3D = lowerStory.contains("آلو") ||
-                lowerStory.contains("الو") || lowerStory.contains("ٹماٹر") ||
-                lowerStory.contains("tomato") || lowerStory.contains("tomatoes") || lowerStory.contains("potato") || lowerStory.contains("potatoes");
-
-        if (!useReal3D) {
-            throw new IllegalArgumentException(
-                    "A real 3D model is not yet available for this story. Try a potato and tomato story for this initial 3D build.");
-        }
-
         Bitmap[] generatedFrames = new Bitmap[0];
 
         boolean muxerStarted = false;
@@ -134,7 +124,7 @@ public final class VideoRenderer {
                 Canvas canvas = surface.lockCanvas(null);
 
                 try {
-                    Bitmap frame3D = glVegetables.render(frame);
+                    Bitmap frame3D = glVegetables.render(frame, scenes[sceneIndex], story);
                     canvas.drawBitmap(frame3D, 0f, 0f, null);
                     frame3D.recycle();
 
