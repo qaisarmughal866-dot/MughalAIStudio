@@ -26,7 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
-    private EditText story, apiKey;
+    private EditText story;
     private Spinner duration, language;
     private TextView status, createButton;
     private final ExecutorService worker =
@@ -71,7 +71,7 @@ public class MainActivity extends Activity {
         root.addView(heading);
 
         TextView intro = new TextView(this);
-        intro.setText("YOUR STORY • YOUR CARTOON");
+        intro.setText("YOUR STORY • OFFLINE 3D CARTOON");
         intro.setTextColor(Color.LTGRAY);
         intro.setGravity(Gravity.CENTER);
         intro.setPadding(0,dp(6),0,dp(18));
@@ -104,31 +104,12 @@ public class MainActivity extends Activity {
         story.setBackground(box(Color.rgb(24,57,47)));
         root.addView(story,new LinearLayout.LayoutParams(-1,dp(145)));
 
-        TextView apiLabel = new TextView(this);
-        apiLabel.setText("fal.ai API Key");
-        apiLabel.setTextColor(gold);
-        apiLabel.setTextSize(15);
-        apiLabel.setPadding(0,dp(16),0,dp(5));
-        root.addView(apiLabel);
-
-        apiKey = new EditText(this);
-        apiKey.setTextColor(Color.WHITE);
-        apiKey.setHintTextColor(Color.LTGRAY);
-        apiKey.setHint("اپنی fal.ai چابی یہاں درج کریں");
-        apiKey.setSingleLine(true);
-        apiKey.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
-                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        apiKey.setPadding(dp(14),dp(12),dp(14),dp(12));
-        apiKey.setBackground(box(Color.rgb(24,57,47)));
-        apiKey.setText(getSharedPreferences("mughal_settings",MODE_PRIVATE)
-                .getString("fal_api_key",""));
-        root.addView(apiKey,new LinearLayout.LayoutParams(-1,dp(54)));
-
-        TextView apiNote = new TextView(this);
-        apiNote.setText("ویڈیو بنانے کے لیے fal.ai اکاؤنٹ میں رقم یا کریڈٹ ہونا ضروری ہے۔ اپنی API چابی کسی کو نہ دیں۔");
-        apiNote.setTextColor(Color.LTGRAY);
-        apiNote.setTextSize(12);
-        root.addView(apiNote);
+        TextView modeNote = new TextView(this);
+        modeNote.setText("آف لائن 3D آزمائشی ورژن: انسانوں اور منتخب جانوروں کے بنیادی 3D کردار، سادہ حرکت اور کہانی کے مطابق چند ماحول۔ کسی API چابی یا ادائیگی کی ضرورت نہیں۔");
+        modeNote.setTextColor(gold);
+        modeNote.setTextSize(13);
+        modeNote.setPadding(0,dp(14),0,dp(8));
+        root.addView(modeNote);
 
         language = addSpinner(root,"Caption Language",
                 new String[]{"اردو","English"});
@@ -149,7 +130,7 @@ public class MainActivity extends Activity {
         note.setTextColor(Color.LTGRAY);
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
-        note.setText("یہ نسخہ ایک مختصر 8 سیکنڈ کی متحرک ویڈیو بناتا ہے۔ لمبی کہانی کے لیے کئی ویڈیو کلپس درکار ہوں گے۔");
+        note.setText("یہ نسخہ مختصر 8 سیکنڈ کی 3D ویڈیو بناتا ہے۔ کرداروں اور مناظر کی پہچان ابھی بنیادی الفاظ کے ذریعے ہوتی ہے؛ ہر کہانی کے لیے مکمل خودکار فلم سازی ابھی موجود نہیں۔");
         root.addView(note);
 
         setContentView(scroll);
@@ -209,15 +190,6 @@ public class MainActivity extends Activity {
             return;
         }
         final boolean english = language.getSelectedItemPosition() == 1;
-        final String falKey = apiKey.getText().toString().trim();
-        if (falKey.isEmpty()) {
-            apiKey.setError("fal.ai API چابی درج کریں");
-            status.setText("ویڈیو بنانے کے لیے fal.ai کی چابی درج کریں۔");
-            return;
-        }
-        getSharedPreferences("mughal_settings",MODE_PRIVATE).edit()
-                .putString("fal_api_key",falKey).apply();
-
         createButton.setEnabled(false);
         status.setText("کارٹون ویڈیو تیار کی جا رہی ہے...");
         worker.execute(() -> {
@@ -228,8 +200,10 @@ public class MainActivity extends Activity {
                     throw new Exception("Cannot create video folder");
                 output = new File(folder,"Animated_Cartoon_" + System.currentTimeMillis() + ".mp4");
                 final File target = output;
-                VeoVideoGenerator.generate(text,falKey,english,target,
-                        message -> runOnUiThread(() -> status.setText(message)));
+                VideoRenderer.render(text,target,8,english,
+                        (frame,total) -> runOnUiThread(() ->
+                                status.setText("حقیقی 3D ویڈیو تیار ہو رہی ہے: "
+                                        + (frame * 100 / Math.max(1,total)) + "%")));
                 String message = saveToGallery(target);
                 runOnUiThread(() -> {
                     status.setText("اصل اینیمیٹڈ کارٹون ویڈیو بن گئی!\\n" + message);
