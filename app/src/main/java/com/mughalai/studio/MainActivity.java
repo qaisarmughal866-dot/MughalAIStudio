@@ -105,7 +105,7 @@ public class MainActivity extends Activity {
         root.addView(story,new LinearLayout.LayoutParams(-1,dp(145)));
 
         TextView apiLabel = new TextView(this);
-        apiLabel.setText("Google AI Studio API Key (Veo access required)");
+        apiLabel.setText("fal.ai API Key");
         apiLabel.setTextColor(gold);
         apiLabel.setTextSize(15);
         apiLabel.setPadding(0,dp(16),0,dp(5));
@@ -114,18 +114,18 @@ public class MainActivity extends Activity {
         apiKey = new EditText(this);
         apiKey.setTextColor(Color.WHITE);
         apiKey.setHintTextColor(Color.LTGRAY);
-        apiKey.setHint("Paste your Google AI Studio API key");
+        apiKey.setHint("اپنی fal.ai چابی یہاں درج کریں");
         apiKey.setSingleLine(true);
         apiKey.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
                 android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
         apiKey.setPadding(dp(14),dp(12),dp(14),dp(12));
         apiKey.setBackground(box(Color.rgb(24,57,47)));
         apiKey.setText(getSharedPreferences("mughal_settings",MODE_PRIVATE)
-                .getString("gemini_api_key",""));
+                .getString("fal_api_key",""));
         root.addView(apiKey,new LinearLayout.LayoutParams(-1,dp(54)));
 
         TextView apiNote = new TextView(this);
-        apiNote.setText("اصل حرکت والے 3D کارٹون کے لیے Veo video model کا access اور billing/credits ضروری ہیں۔ صرف Gemini image quota کافی نہیں۔");
+        apiNote.setText("ویڈیو بنانے کے لیے fal.ai اکاؤنٹ میں رقم یا کریڈٹ ہونا ضروری ہے۔ اپنی API چابی کسی کو نہ دیں۔");
         apiNote.setTextColor(Color.LTGRAY);
         apiNote.setTextSize(12);
         root.addView(apiNote);
@@ -149,7 +149,7 @@ public class MainActivity extends Activity {
         note.setTextColor(Color.LTGRAY);
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
-        note.setText("Veo-generated moving 3D cartoon clip with native sound/audio. First version creates one short 8-second clip; longer stories need multiple clips.");
+        note.setText("یہ نسخہ ایک مختصر 8 سیکنڈ کی متحرک ویڈیو بناتا ہے۔ لمبی کہانی کے لیے کئی ویڈیو کلپس درکار ہوں گے۔");
         root.addView(note);
 
         setContentView(scroll);
@@ -209,17 +209,17 @@ public class MainActivity extends Activity {
             return;
         }
         final boolean english = language.getSelectedItemPosition() == 1;
-        final String geminiKey = apiKey.getText().toString().trim();
-        if (geminiKey.isEmpty()) {
-            apiKey.setError("Google AI Studio API key zaroori hai");
-            status.setText("Veo se asli animated cartoon banane ke liye API key enter karein.");
+        final String falKey = apiKey.getText().toString().trim();
+        if (falKey.isEmpty()) {
+            apiKey.setError("fal.ai API چابی درج کریں");
+            status.setText("ویڈیو بنانے کے لیے fal.ai کی چابی درج کریں۔");
             return;
         }
         getSharedPreferences("mughal_settings",MODE_PRIVATE).edit()
-                .putString("gemini_api_key",geminiKey).apply();
+                .putString("fal_api_key",falKey).apply();
 
         createButton.setEnabled(false);
-        status.setText("Veo AI se animated cartoon tayyar ho raha hai...");
+        status.setText("کارٹون ویڈیو تیار کی جا رہی ہے...");
         worker.execute(() -> {
             File output = null;
             try {
@@ -228,7 +228,7 @@ public class MainActivity extends Activity {
                     throw new Exception("Cannot create video folder");
                 output = new File(folder,"Animated_Cartoon_" + System.currentTimeMillis() + ".mp4");
                 final File target = output;
-                VeoVideoGenerator.generate(text,geminiKey,english,target,
+                VeoVideoGenerator.generate(text,falKey,english,target,
                         message -> runOnUiThread(() -> status.setText(message)));
                 String message = saveToGallery(target);
                 runOnUiThread(() -> {
