@@ -53,7 +53,7 @@ public final class VideoRenderer {
             scenes = new String[]{story};
         }
 
-        int totalFrames = minutes * 60 * FPS;
+        int totalFrames = minutes * FPS; // duration argument is seconds
 
         MediaCodec encoder = null;
         MediaMuxer muxer = null;
@@ -62,7 +62,7 @@ public final class VideoRenderer {
         String lowerStory = story.toLowerCase();
         boolean useReal3D = lowerStory.contains("آلو") ||
                 lowerStory.contains("الو") || lowerStory.contains("ٹماٹر") ||
-                lowerStory.contains("tomato") || lowerStory.contains("potato");
+                lowerStory.contains("tomato") || lowerStory.contains("tomatoes") || lowerStory.contains("potato") || lowerStory.contains("potatoes");
 
         if (!useReal3D) {
             throw new IllegalArgumentException(
