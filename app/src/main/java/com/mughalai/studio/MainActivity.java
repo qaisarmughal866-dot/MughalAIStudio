@@ -105,7 +105,7 @@ public class MainActivity extends Activity {
         root.addView(story,new LinearLayout.LayoutParams(-1,dp(145)));
 
         TextView modeNote = new TextView(this);
-        modeNote.setText("آف لائن حقیقی 3D آزمائشی ورژن: فی الحال آلو اور ٹماٹر کے کرداروں والی کہانی بنائیں۔ کسی API چابی یا ادائیگی کی ضرورت نہیں۔");
+        modeNote.setText("آف لائن 3D آزمائشی ورژن: انسانوں اور منتخب جانوروں کے بنیادی 3D کردار، سادہ حرکت اور کہانی کے مطابق چند ماحول۔ کسی API چابی یا ادائیگی کی ضرورت نہیں۔");
         modeNote.setTextColor(gold);
         modeNote.setTextSize(13);
         modeNote.setPadding(0,dp(14),0,dp(8));
@@ -130,7 +130,7 @@ public class MainActivity extends Activity {
         note.setTextColor(Color.LTGRAY);
         note.setTextSize(12);
         note.setGravity(Gravity.CENTER);
-        note.setText("یہ نسخہ ایک مختصر 8 سیکنڈ کی متحرک ویڈیو بناتا ہے۔ لمبی کہانی کے لیے کئی ویڈیو کلپس درکار ہوں گے۔");
+        note.setText("یہ نسخہ مختصر 8 سیکنڈ کی 3D ویڈیو بناتا ہے۔ کرداروں اور مناظر کی پہچان ابھی بنیادی الفاظ کے ذریعے ہوتی ہے؛ ہر کہانی کے لیے مکمل خودکار فلم سازی ابھی موجود نہیں۔");
         root.addView(note);
 
         setContentView(scroll);
