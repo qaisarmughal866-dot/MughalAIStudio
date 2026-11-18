@@ -64,10 +64,12 @@ public final class VideoRenderer {
                 lowerStory.contains("الو") || lowerStory.contains("ٹماٹر") ||
                 lowerStory.contains("tomato") || lowerStory.contains("potato");
 
-        Bitmap[] generatedFrames = new Bitmap[sceneImages == null ? 0 : sceneImages.length];
-        for (int i = 0; i < generatedFrames.length; i++) {
-            generatedFrames[i] = BitmapFactory.decodeFile(sceneImages[i].getAbsolutePath());
+        if (!useReal3D) {
+            throw new IllegalArgumentException(
+                    "A real 3D model is not yet available for this story. Try a potato and tomato story for this initial 3D build.");
         }
+
+        Bitmap[] generatedFrames = new Bitmap[0];
 
         boolean muxerStarted = false;
         int trackIndex = -1;
@@ -106,6 +108,7 @@ public final class VideoRenderer {
                     MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
 
             encoder.start();
+            glVegetables = new GLVegetableRenderer();
 
             MediaCodec.BufferInfo info =
                     new MediaCodec.BufferInfo();
@@ -131,15 +134,9 @@ public final class VideoRenderer {
                 Canvas canvas = surface.lockCanvas(null);
 
                 try {
-                    if (generatedFrames.length > 0) {
-                        int imageIndex = Math.min(generatedFrames.length - 1,
-                                (int)((long)sceneIndex * generatedFrames.length / Math.max(1, scenes.length)));
-                        CartoonFrameRenderer.draw(canvas, generatedFrames[imageIndex],
-                                scenes[sceneIndex], frame, english);
-                    } else {
-                        StorySceneRenderer.draw(canvas, scenes[sceneIndex], frame, english);
-                    }
-                    
+                    Bitmap frame3D = glVegetables.render(frame);
+                    canvas.drawBitmap(frame3D, 0f, 0f, null);
+                    frame3D.recycle();
                 } finally {
                     surface.unlockCanvasAndPost(canvas);
                 }
@@ -248,6 +245,9 @@ public final class VideoRenderer {
             
             for (Bitmap bitmap : generatedFrames) {
                 if (bitmap != null && !bitmap.isRecycled()) bitmap.recycle();
+            }
+            if (glVegetables != null) {
+                try { glVegetables.close(); } catch (Exception ignored) { }
             }
             if (encoder != null) {
                 try { encoder.stop(); }
